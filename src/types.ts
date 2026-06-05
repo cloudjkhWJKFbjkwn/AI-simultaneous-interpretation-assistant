@@ -1,3 +1,6 @@
+/** 字幕条目状态 */
+export type SubtitleStatus = 'interim' | 'final';
+
 /** 语音识别结果事件 */
 export interface SpeechResult {
   type: 'interim' | 'final';
@@ -12,6 +15,8 @@ export interface SubtitleItem {
   translatedText: string;
   timestamp: number;
   marked: boolean;
+  version: number;
+  status: SubtitleStatus;
 }
 
 /** 字幕操作类型 */
@@ -19,6 +24,7 @@ export type SubtitleAction =
   | { type: 'add'; item: SubtitleItem }
   | { type: 'correct'; id: string; newTranslatedText: string }
   | { type: 'toggleMark'; id: string }
+  | { type: 'updateStatus'; id: string; status: SubtitleStatus }
   | { type: 'clear' };
 
 /** 翻译服务接口 */
