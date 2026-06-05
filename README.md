@@ -1,100 +1,58 @@
-﻿# AI-simultaneous-interpretation-assistant
-# 🎙️ AI 同声传译助手 (Web Demo)
+﻿# 🎙️ AI 同声传译助手 (Web Demo)
 
-> 一款基于浏览器的实时语音翻译字幕工具，专为观看英语演讲、技术分享、国际会议或网课设计。  
-> **核心亮点**：字幕会自动修正前文的翻译错误，越译越准。
+> 浏览器端实时英文语音识别工具，适用于观看英文演讲、技术分享和在线课程。
 
-## 💡 设计思路
-
-### 我们解决了什么问题？
-用户在观看外语内容时，现有的翻译工具存在三个痛点：
-1. **延迟高**：传统翻译软件无法实时跟上语速，信息严重滞后。
-2. **无修正**：同声传译中的早期错译会一直留在屏幕上，误导理解。
-3. **门槛高**：需要安装特定软件或购买硬件，无法快速使用。
-
-### 我们的设计理念
-- **零摩擦**：打开浏览器即用，无需安装、注册或付费。
-- **先显示，后修正**：像真人译员一样，先快速给出译文，再根据后文修正前文的错误，使字幕动态优化。
-- **体验优先**：修正过程平滑无闪烁，字幕自动滚动且不打扰用户回看。
-- **架构可扩展**：Demo 阶段使用浏览器原生能力快速验证，但接口设计上允许无缝升级到服务端流式 ASR 和 LLM 修正。
-
-## ✨ 核心功能 (Demo 版)
-
-| 功能 | 说明 |
-|------|------|
-| 🎤 实时语音识别 | 利用浏览器内置的 Web Speech API，将英语语音实时转为文本（支持中间不稳定结果预览） |
-| 🌐 流式翻译 | 将识别出的稳定句子即时翻译为中文（Demo 阶段使用模拟翻译，架构预留了真实 API 接口） |
-| ✨ 自动修正 | 当后文出现转折（如 "but", "however"）时，自动修正前文译文的偏差，并播放平滑动画 |
-| 📜 动态字幕 | 新句在底部渐显，自动上滚；用户手动回看时暂停滚动 |
-| 🔊 语音朗读 | 可选的中文语音合成，仅朗读新句子，修正句不发声 |
-| 📤 导出记录 | 一键导出完整翻译字幕为 TXT 文件 |
-
-## 🧱 模块化架构
-
-应用严格遵循**单向数据流**和**松耦合模块**设计，每个模块均可独立开发、测试和替换。
+## 🏗️ 架构
 
 ```
-[音频捕获] → [语音识别] → [翻译服务] → [字幕状态管理] → [字幕UI渲染]
-                        ↖ [修正触发器] (监听上下文)
-[语音合成] ← [字幕状态管理]
-[设置与导出] ↔ [字幕状态管理]
+麦克风 → AudioCapture (PCM 16kHz) → 音量检测断句
+    → SpeechRecognitionService → /api/baidu-asr (Vite 代理)
+    → 百度短语音识别 REST API → 语义断句显示
 ```
-
-### 各模块职责
-- **音频捕获**：获取麦克风权限，提供开始/停止控制。
-- **语音识别服务 (ASR)**：封装 Web Speech API，输出标准化的 `interim` 和 `final` 事件。
-- **翻译服务**：接收最终文本，返回中文翻译（可插拔，目前模拟，未来可接入 Google Translate 或 LLM）。
-- **修正触发器**：根据上下文和规则（或未来的 LLM）生成修正指令，改变前文译文。
-- **字幕状态管理**：维护一个带唯一 ID 的字幕数组，处理新增、修正事件，驱动 UI 更新。
-- **字幕 UI**：渲染动态滚动字幕，处理修正动画和用户交互。
-- **设置与导出**：TTS 开关、语速调节、字幕导出等功能。
 
 ## 🚀 快速开始
 
-### 前置要求
-- Node.js 18+
-- 现代浏览器（Chrome / Edge 推荐，Web Speech API 支持最佳）
-
-### 本地运行
 ```bash
-# 克隆项目
-git clone https://github.com/cloudjkhWJKFbjkwn/AI-simultaneous-interpretation-assistant.git
-cd AI-simultaneous-interpretation-assistant
-
-# 安装依赖
+# 1. 安装依赖
 npm install
 
-# 启动开发服务器
+# 2. 配置百度 AI 密钥
+cp .env.example .env
+# 编辑 .env 填入 BAIDU_API_KEY 和 BAIDU_SECRET_KEY
+# 需在百度 AI 控制台开通：短语音识别、实时语音识别
+
+# 3. 启动开发服务器
 npm run dev
+
+# 4. 打开 http://localhost:5173
 ```
 
-浏览器访问 http://localhost:5173，点击"开始监听"并允许麦克风权限，即可开始体验。
+### Vercel 部署
 
-### 部署到 Vercel
+```bash
+npx vercel --prod
+```
+环境变量: `BAIDU_API_KEY`, `BAIDU_SECRET_KEY`
 
-点击下方按钮一键部署，生成公开演示链接，无需任何配置。
+## 🧠 断句策略
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+- **音量检测**: 停顿 ~1 秒自动切割音频发送
+- **定时兜底**: 最长 3 秒强制发送
+- **语义断句**: 识别结果按标点符号 + 长度智能分句
 
-## 🧪 技术栈
-- 前端框架：React 18 + TypeScript + Vite
-- 样式：Tailwind CSS
-- 语音识别：Web Speech API (SpeechRecognition)
-- 翻译 (可选)：可接入 Google Translate API / DeepL API（通过 Vercel Serverless Function 代理）
-- 部署：Vercel
+## 🔧 技术栈
 
-## 📖 后续升级路径
-本项目为 Demo 版本，主要用于验证交互和核心技术可行性。后续可逐步升级为：
+React 19 + TypeScript + Vite 8 · Tailwind CSS v4 · 百度 AI 短语音识别 · Vercel Serverless
 
-- **真实翻译引擎**：替换 TranslateService 为调用翻译 API。
-- **LLM 上下文修正**：将 CorrectionTrigger 改为发送上下文窗口至 GPT-4o-mini，实现真正的智能修正。
-- **桌面应用**：使用 Tauri 封装，增加系统内录功能，覆盖网课、会议等更多场景。
-- **私有化部署**：将 ASR（如 FunASR）和翻译模型本地化，满足隐私需求。
+## 📁 项目结构
 
-## 🤝 贡献与反馈
-欢迎体验并提出宝贵意见！你可以通过以下方式参与：
-
-- 提交 Issue 报告 Bug 或建议新功能
-- 基于 feat/ 分支发起 Pull Request（请参考模块说明）
-- 分享你的使用场景和期待的特性
-
+```
+src/
+├── App.tsx                          # 主界面
+├── hooks/useSpeechRecognition.ts    # 语音识别状态管理
+└── services/
+    ├── AudioCapture.ts              # 麦克风 + PCM 采集
+    └── SpeechRecognitionService.ts  # 百度 ASR 客户端
+api/
+└── baidu-token.ts                   # Vercel Token 代理
+```

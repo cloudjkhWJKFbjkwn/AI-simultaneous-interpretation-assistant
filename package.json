@@ -7,7 +7,9 @@
                     "dev":  "vite",
                     "build":  "tsc -b \u0026\u0026 vite build",
                     "lint":  "eslint .",
-                    "preview":  "vite preview"
+                    "preview":  "vite preview",
+                    "api:dev":  "vercel dev",
+                    "deploy":  "vercel --prod"
                 },
     "dependencies":  {
                          "react":  "^19.2.6",
