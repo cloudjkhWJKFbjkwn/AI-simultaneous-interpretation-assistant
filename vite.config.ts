@@ -1,9 +1,11 @@
 ﻿import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import crypto from 'crypto'
 
 const API_KEY = 'hQaxRjnhJ6wean4FCAqdSP84';
 const SECRET_KEY = 'vOFTi1baGB3cmDpynsXfK4d9HdLFgy08';
+const TRANSLATE_APP_ID = 'Q5Hd_d8hc0g70sfpjfm4rr170';
 let cachedToken = '';
 let tokenExpiry = 0;
 
@@ -22,6 +24,32 @@ function baiduApiPlugin() {
   return {
     name: 'baidu-api-proxy',
     configureServer(server: any) {
+      // 百度翻译 API 代理
+      server.middlewares.use('/api/baidu-translate', async (req: any, res: any) => {
+        try {
+          let body = '';
+          req.on('data', (c: string) => body += c);
+          await new Promise(r => req.on('end', r));
+          const { q, from, to } = JSON.parse(body);
+
+          const salt = String(Math.floor(Math.random() * 10000000000));
+          const sign = crypto.createHash('md5').update(TRANSLATE_APP_ID + q + salt + SECRET_KEY).digest('hex');
+
+          const params = new URLSearchParams({
+            q, from: from || 'en', to: to || 'zh',
+            appid: TRANSLATE_APP_ID, salt, sign,
+          });
+
+          const fetchRes = await fetch('https://fanyi-api.baidu.com/api/trans/vip/translate?' + params.toString());
+          const data = await fetchRes.json() as any;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(data));
+        } catch (err: any) {
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error: 'Proxy: ' + err.message }));
+        }
+      });
+
       server.middlewares.use('/api/baidu-token', async (_req: any, res: any) => {
         try {
           const token = await getToken();
@@ -36,7 +64,6 @@ function baiduApiPlugin() {
       server.middlewares.use('/api/baidu-asr', async (req: any, res: any) => {
         try {
           const token = await getToken();
-          // 用 PCM 格式并指定 rate
           const rate = req.headers['x-audio-rate'] || '16000';
           const url = 'https://vop.baidu.com/server_api?' + new URLSearchParams({
             format: 'pcm', rate: String(rate), channel: '1', cuid: 'codex-client',

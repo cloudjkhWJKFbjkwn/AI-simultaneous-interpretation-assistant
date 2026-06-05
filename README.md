@@ -1,13 +1,14 @@
 ﻿# 🎙️ AI 同声传译助手 (Web Demo)
 
-> 浏览器端实时英文语音识别工具，适用于观看英文演讲、技术分享和在线课程。
+> 浏览器端实时英文语音识别 + 中文翻译工具，适用于观看英文演讲、技术分享和在线课程。
 
 ## 🏗️ 架构
 
 ```
 麦克风 → AudioCapture (PCM 16kHz) → 音量检测断句
     → SpeechRecognitionService → /api/baidu-asr (Vite 代理)
-    → 百度短语音识别 REST API → 语义断句显示
+    → 百度短语音识别 REST API → 语义断句
+    → TranslationService → 实时中英双语字幕展示
 ```
 
 ## 🚀 快速开始
@@ -27,12 +28,19 @@ npm run dev
 # 4. 打开 http://localhost:5173
 ```
 
+### 翻译策略
+
+| 策略 | 说明 | 配置 |
+|------|------|------|
+| `mock` | 本地词典翻译（默认），无需 API，零延迟 | `VITE_TRANSLATION_STRATEGY=mock` |
+| `baidu` | 百度文本翻译 API，每月免费 50 万字符 | `VITE_TRANSLATION_STRATEGY=baidu` + `BAIDU_APP_ID` |
+
 ### Vercel 部署
 
 ```bash
 npx vercel --prod
 ```
-环境变量: `BAIDU_API_KEY`, `BAIDU_SECRET_KEY`
+环境变量: `BAIDU_API_KEY`, `BAIDU_SECRET_KEY`, `VITE_TRANSLATION_STRATEGY`
 
 ## 🧠 断句策略
 
@@ -42,17 +50,22 @@ npx vercel --prod
 
 ## 🔧 技术栈
 
-React 19 + TypeScript + Vite 8 · Tailwind CSS v4 · 百度 AI 短语音识别 · Vercel Serverless
+React 19 + TypeScript + Vite 8 · Tailwind CSS v4 · 百度 AI 短语音识别 · 百度文本翻译 API · Vercel Serverless
 
 ## 📁 项目结构
 
 ```
 src/
-├── App.tsx                          # 主界面
-├── hooks/useSpeechRecognition.ts    # 语音识别状态管理
+├── App.tsx                            # 主界面（双语字幕卡片）
+├── hooks/useSpeechRecognition.ts      # 语音识别 + 翻译状态管理
+├── types.ts                           # 类型定义
 └── services/
-    ├── AudioCapture.ts              # 麦克风 + PCM 采集
-    └── SpeechRecognitionService.ts  # 百度 ASR 客户端
+    ├── AudioCapture.ts                # 麦克风 + PCM 采集
+    ├── SpeechRecognitionService.ts    # 百度 ASR 客户端
+    ├── PunctuationService.ts          # 标点补全引擎
+    ├── TranslationService.ts          # 翻译服务工厂 + LRU 缓存
+    ├── MockTranslationService.ts      # 本地词典翻译（200+ 词汇）
+    └── BaiduTranslationService.ts     # 百度翻译 API 客户端
 api/
-└── baidu-token.ts                   # Vercel Token 代理
+└── baidu-token.ts                     # Vercel Token 代理
 ```

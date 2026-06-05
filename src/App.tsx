@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import type { ConnectionStatus } from './hooks/useSpeechRecognition';
+import type { SubtitleItem } from './types';
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
   if (status === 'connecting') return '连接中...';
@@ -16,6 +17,21 @@ function getStatusDotClass(status: ConnectionStatus, isListening: boolean): stri
   if (status === 'connected') return base + 'bg-green-500';
   if (status === 'disconnected') return base + 'bg-red-400';
   return base + 'bg-slate-300';
+}
+
+function SubtitleCard({ item }: { item: SubtitleItem }) {
+  return (
+    <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+      <p className="text-slate-800 text-sm leading-relaxed">{item.sourceText}</p>
+      {item.translatedText ? (
+        <p className="text-blue-600 text-sm leading-relaxed mt-1 pt-1 border-t border-slate-100">
+          {item.translatedText}
+        </p>
+      ) : (
+        <p className="text-slate-300 text-xs mt-1 animate-pulse">翻译中...</p>
+      )}
+    </div>
+  );
 }
 
 function App() {
@@ -60,15 +76,19 @@ function App() {
           <div className="flex flex-col items-center justify-center h-full text-slate-300">
             <span className="text-5xl mb-4">🎤</span>
             <p className="text-lg">点击下方按钮开始实时翻译</p>
-            <p className="text-sm mt-1">说出英文，实时显示识别结果</p>
+            <p className="text-sm mt-1">说出英文，实时显示翻译结果</p>
           </div>
         )}
 
-        {completedSentences.map(function(s, i) {
-          return (<div key={i} className="p-3 bg-white rounded-lg border border-slate-100 shadow-sm"><p className="text-slate-800 text-sm leading-relaxed">{s}</p></div>);
+        {completedSentences.map(function(item) {
+          return <SubtitleCard key={item.id} item={item} />;
         })}
 
-        {interimText && (<div className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm opacity-70"><p className="text-slate-500 text-sm italic">{interimText}</p></div>)}
+        {interimText && (
+          <div className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm opacity-70">
+            <p className="text-slate-500 text-sm italic">{interimText}</p>
+          </div>
+        )}
       </main>
 
       <footer className="px-6 py-4 border-t border-slate-200 bg-white">

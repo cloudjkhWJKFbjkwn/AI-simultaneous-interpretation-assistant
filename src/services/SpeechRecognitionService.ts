@@ -1,4 +1,5 @@
 ﻿import type { SpeechResult } from '../types';
+import { PunctuationService } from './PunctuationService';
 
 export type RecognitionCallback = (result: SpeechResult) => void;
 export type ErrorCallback = (error: string) => void;
@@ -8,7 +9,6 @@ export type StatusCallback = (status: 'connecting' | 'connected' | 'disconnected
 const SILENCE_THRESHOLD = 600;
 const SILENCE_FRAMES = 8;         // ~1 秒静音触发发送
 const MAX_INTERVAL = 3000;        // 最长 3 秒也发送
-const MAX_SENTENCE_LEN = 80;      // 无标点时最长字符数
 
 export class SpeechRecognitionService {
   private _isActive = false;
@@ -22,7 +22,6 @@ export class SpeechRecognitionService {
   private sendTimer: ReturnType<typeof setInterval> | null = null;
   private rate: number = 16000;
   private textBuffer = '';
-  private lastSentIdx = 0;
 
   get isActive(): boolean { return this._isActive; }
   static isSupported(): boolean { return true; }
@@ -33,7 +32,7 @@ export class SpeechRecognitionService {
   ): Promise<void> {
     if (this._isActive) return;
     this.onResult = onResult; this.onError = onError; this.onEnd = onEnd; this.onStatus = onStatus || null;
-    this.audioChunks = []; this.silenceCount = 0; this.textBuffer = ''; this.lastSentIdx = 0;
+    this.audioChunks = []; this.silenceCount = 0; this.textBuffer = '';
     this.rate = actualRate || 16000; this.lastSendTime = Date.now();
 
     this.onStatus?.('connecting');
@@ -47,7 +46,6 @@ export class SpeechRecognitionService {
 
   private checkInterval(): void {
     if (!this._isActive) return;
-    // 定时兜底发送
     if (Date.now() - this.lastSendTime > MAX_INTERVAL && this.audioChunks.length > 0) {
       this.flushAudio();
     }
@@ -60,30 +58,42 @@ export class SpeechRecognitionService {
   }
 
   private segmentSentences(text: string): string[] {
-    const out: string[] = [];
+    if (!text) return [];
+    const sentences: string[] = [];
+    // Split on sentence-ending punctuation
+    const parts = text.split(/(?<=[.!?])\s+/);
     let buf = '';
-    const parts = text.split(/(?<=[.!?]\s+)/);
-    for (const p of parts) {
-      buf += p;
-      if (/[.!?]\s*$/.test(buf)) { out.push(buf.trim()); buf = ''; }
-      else if (buf.length > MAX_SENTENCE_LEN) { out.push(buf.trim()); buf = ''; }
-    }
-    if (buf.trim()) out.push(buf.trim());
-    return out;
-  }
-
-  private emitSentences(): void {
-    const sentences = this.segmentSentences(this.textBuffer);
-    // 发送完整句
-    for (let i = 0; i < sentences.length - 1; i++) {
-      if (i >= this.lastSentIdx) {
-        this.lastSentIdx = i + 1;
-        this.onResult?.({ type: 'final', text: sentences[i], timestamp: Date.now() });
+    for (const part of parts) {
+      buf += (buf ? ' ' : '') + part;
+      if (/[.!?]$/.test(buf.trim())) {
+        sentences.push(buf.trim());
+        buf = '';
       }
     }
-    // 最后一段是 interim
-    const cur = sentences[sentences.length - 1] || '';
-    this.onResult?.({ type: 'interim', text: cur, timestamp: Date.now() });
+    if (buf.trim()) sentences.push(buf.trim());
+    return sentences;
+  }
+
+  private processText(newPunctuatedChunk: string): void {
+    // Append punctuated chunk to buffer
+    this.textBuffer += (this.textBuffer ? ' ' : '') + newPunctuatedChunk;
+
+    // Segment into sentences
+    const sentences = this.segmentSentences(this.textBuffer);
+
+    // Emit complete sentences (all but possibly the last)
+    const completeCount = sentences.length > 1 ? sentences.length - 1 : 0;
+    for (let i = 0; i < completeCount; i++) {
+      this.onResult?.({ type: 'final', text: sentences[i], timestamp: Date.now() });
+    }
+
+    // Keep only the last fragment in the buffer
+    this.textBuffer = sentences.length > 0 ? sentences[sentences.length - 1] : '';
+
+    // Show the last fragment as interim (if not empty)
+    if (this.textBuffer) {
+      this.onResult?.({ type: 'interim', text: this.textBuffer, timestamp: Date.now() });
+    }
   }
 
   private async flushAudio(): Promise<void> {
@@ -105,12 +115,13 @@ export class SpeechRecognitionService {
       });
       const d = await r.json() as any;
       if (d.err_no === 0 && d.result?.length > 0) {
-        const t = d.result[0].trim();
-        if (t) { this.textBuffer += (this.textBuffer ? ' ' : '') + t; }
+        const raw = d.result[0].trim();
+        if (raw) {
+          const punctuated = PunctuationService.restore(raw);
+          this.processText(punctuated);
+        }
       }
     } catch (e) { /* ignore */ }
-
-    this.emitSentences();
   }
 
   sendAudio(pcmData: Int16Array): void {
@@ -132,8 +143,11 @@ export class SpeechRecognitionService {
     this._isActive = false;
     this.onStatus?.('disconnected');
     this.flushAudio().then(() => {
-      const rem = this.textBuffer.substring(this.lastSentIdx > 0 ? this.textBuffer.length : 0).trim();
-      if (rem) this.onResult?.({ type: 'final', text: rem, timestamp: Date.now() });
+      // Emit any remaining text in buffer as final
+      if (this.textBuffer.trim()) {
+        this.onResult?.({ type: 'final', text: this.textBuffer.trim(), timestamp: Date.now() });
+        this.textBuffer = '';
+      }
       this.onEnd?.();
     });
   }
