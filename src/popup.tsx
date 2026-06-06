@@ -31,7 +31,6 @@ export function PopupApp() {
       if (e.data?.type === "sync") {
         const all = e.data.items;
         setItems(all);
-        // Keep previous item for fade-out effect
         if (all.length >= 2) {
           setPrevItem(all[all.length - 2]);
         }
@@ -52,7 +51,6 @@ export function PopupApp() {
     };
   }, []);
 
-  // Auto-hide UI
   useEffect(() => {
     if (!isListening) {
       setShowUI(true);
@@ -86,37 +84,33 @@ export function PopupApp() {
   const current = items[items.length - 1];
 
   return (
-    <div className="h-screen text-white flex flex-col select-none transition-all duration-500"
-      style={{ background: showUI ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.08)" }}
-    >
-      {/* Lyric display area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-3">
-        {/* Previous line (faded) */}
+    <div className="h-screen text-white flex flex-col select-none">
+      {/* Lyric area - no background */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-2">
         {prevItem && (
-          <div className="text-center opacity-30 transition-opacity duration-500 max-w-full">
+          <div className="text-center opacity-25 max-w-full">
             <p className="text-sm leading-relaxed break-words line-clamp-2"
-              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8)" }}>
               {prevItem.sourceText}
             </p>
             {prevItem.translatedText && (
-              <p className="text-xs text-blue-300/70 mt-0.5"
-                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+              <p className="text-xs text-blue-300/60 mt-0.5"
+                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.9)" }}>
                 {prevItem.translatedText}
               </p>
             )}
           </div>
         )}
 
-        {/* Current line (prominent) */}
         {current ? (
-          <div className="text-center animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-full">
-            <p className="text-xl font-medium leading-relaxed break-words"
-              style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9)" }}>
+          <div className="text-center max-w-full">
+            <p className="text-xl font-bold leading-relaxed break-words"
+              style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 16px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,1)" }}>
               {current.sourceText}
             </p>
             {current.translatedText && (
               <p className="text-base text-blue-300 mt-1.5"
-                style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>
+                style={{ textShadow: "0 1px 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9)" }}>
                 {current.translatedText}
               </p>
             )}
@@ -124,25 +118,25 @@ export function PopupApp() {
         ) : interimText ? (
           <div className="text-center max-w-full">
             <p className="text-xl italic opacity-60"
-              style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9)" }}>
+              style={{ textShadow: "0 2px 8px rgba(0,0,0,1)" }}>
               {interimText}
             </p>
           </div>
         ) : (
-          <p className="text-white/20 text-base text-center">等待字幕...</p>
+          <p className="text-white/20 text-sm text-center">等待字幕...</p>
         )}
       </div>
 
-      {/* Bottom bar */}
-      <div className={"flex items-center justify-end px-4 py-2 shrink-0 transition-opacity duration-300 " +
+      {/* Minimal control: only visible on hover */}
+      <div className={"flex items-center justify-end px-3 py-1.5 shrink-0 transition-opacity duration-300 " +
         (showUI ? "opacity-100" : "opacity-0 pointer-events-none")}>
         <button
           onClick={handleToggle}
           className={
             "px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer " +
             (isListening
-              ? "bg-red-500/60 text-white hover:bg-red-500"
-              : "bg-blue-500/60 text-white hover:bg-blue-500")
+              ? "bg-red-500/50 text-white hover:bg-red-500/80"
+              : "bg-blue-500/50 text-white hover:bg-blue-500/80")
           }
         >
           {isListening ? "停止" : "开始"}
