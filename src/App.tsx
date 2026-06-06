@@ -3,6 +3,7 @@ import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import type { ConnectionStatus } from "./hooks/useSpeechRecognition";
 import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext";
 import { SubtitleList } from "./components/SubtitleList";
+import { exportAsTxt, exportAsMarkdown, exportAsJson, type ExportFormat } from "./services/ExportService";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
   if (status === "connecting") return "连接中...";
@@ -28,6 +29,7 @@ function AppInner() {
   const isListeningRef = useRef(false);
   const startRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const stopRef = useRef<() => void>(() => {});
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
@@ -101,6 +103,24 @@ function AppInner() {
     }
   };
 
+  const handleExport = (format: ExportFormat) => {
+    const finalItems = items.filter((item) => item.status === "final");
+    if (finalItems.length === 0) return;
+
+    switch (format) {
+      case "txt":
+        exportAsTxt(finalItems);
+        break;
+      case "md":
+        exportAsMarkdown(finalItems);
+        break;
+      case "json":
+        exportAsJson(finalItems);
+        break;
+    }
+    setShowExportMenu(false);
+  };
+
   const openPopup = () => {
     if (popupRef.current && !popupRef.current.closed) {
       popupRef.current.focus();
@@ -156,13 +176,46 @@ function AppInner() {
         </div>
         <div className="flex items-center gap-3">
           {items.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="text-xs text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-              title="清空字幕"
-            >
-              清空 ({items.length})
-            </button>
+            <>
+              <button
+                onClick={handleClear}
+                className="text-xs text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                title="清空字幕"
+              >
+                清空 ({items.length})
+              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="text-xs text-green-600 hover:text-green-800 transition-colors cursor-pointer border border-green-200 rounded px-2 py-0.5 hover:bg-green-50"
+                  title="导出字幕"
+                >
+                  导出
+                </button>
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                    <button
+                      onClick={() => handleExport("txt")}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-t-lg cursor-pointer"
+                    >
+                      TXT 纯文本
+                    </button>
+                    <button
+                      onClick={() => handleExport("md")}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      Markdown 表格
+                    </button>
+                    <button
+                      onClick={() => handleExport("json")}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-b-lg cursor-pointer"
+                    >
+                      JSON 原始数据
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
           <button
             onClick={openPopup}
@@ -228,7 +281,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
