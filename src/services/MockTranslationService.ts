@@ -463,7 +463,7 @@ const SORTED_KEYS = Object.keys(DICTIONARY).sort((a, b) => b.length - a.length);
 function normalize(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[,.!?;:''''()\[\]{}]/g, "")
+    .replace(/[,.!?;:()\\[\\]{}]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -477,7 +477,7 @@ function translateWord(w: string): string {
  * Returns the Chinese definition or null if not found.
  */
 export function lookupWord(word: string): string | null {
-  const key = word.toLowerCase().replace(/[,.!?;:''''()\[\]{}]/g, "").trim();
+  const key = word.toLowerCase().replace(/[,.!?;:()\\[\\]{}]/g, "").trim();
   if (!key) return null;
   return DICTIONARY[key] || null;
 }
@@ -528,3 +528,4 @@ export class MockTranslationService implements TranslationService {
     return translated.join("");
   }
 }
+
