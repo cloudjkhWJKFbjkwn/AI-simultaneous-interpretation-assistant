@@ -76,9 +76,9 @@ src/
 | PR2 | 音频捕获与语音识别（百度 ASR REST API + 智能断句） | ✅ master |
 | PR3 | 翻译服务接入（Mock 本地词典 + 百度翻译 API + 双语字幕） | ✅ pr3-translation-service |
 | PR4 | 字幕状态管理（useReducer 状态机 + SubtitleContext + 标记功能） | ✅ pr4-subtitle-manager |
-| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ⬜ 待开发 |
-| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ⬜ 待开发 |
-| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ⬜ 待开发 |
+| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ codex/pr5-use-drag |
+| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ codex/pr6-use-autoscroll |
+| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ codex/pr7-subtitle-components |
 | PR8 | WordPopover — 单词释义弹窗 | ⬜ 待开发 |
 | PR9 | FloatingWindow — 拖拽 + 折叠 | ⬜ 待开发 |
 | PR10 | FloatingWindow — 透明度 + 响应式适配 | ⬜ 待开发 |
