@@ -7,19 +7,15 @@ interface SubWindowItem {
 }
 
 const TEXT_COLORS = [
-  "#ffffff", "#ffeb3b", "#00e5ff", "#76ff03", "#ff6e40", "#ea80fc", "#ff4081",
-];
-const STROKE_COLORS = [
-  "rgba(0,0,0,0.9)", "rgba(30,80,200,0.85)", "rgba(200,30,30,0.85)",
-  "rgba(0,150,50,0.85)", "rgba(150,20,150,0.85)",
+  "#000000", "#ffffff", "#633923", "#B4D3ED", "#ACB28F", "#DFB9B5", "#DFAA4F",
 ];
 
-function loadColor(key: string, fallback: string): string {
+function loadTextColor(): string {
   try {
-    const v = localStorage.getItem(key);
+    const v = localStorage.getItem("popup-text-color");
     if (v) return v;
   } catch { /* ignore */ }
-  return fallback;
+  return "#ffffff";
 }
 
 export function PopupApp() {
@@ -28,9 +24,8 @@ export function PopupApp() {
   const [isListening, setIsListening] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [prevItem, setPrevItem] = useState<SubWindowItem | null>(null);
-  const [textColor, setTextColor] = useState(() => loadColor("popup-text-color", "#ffffff"));
-  const [strokeColor, setStrokeColor] = useState(() => loadColor("popup-stroke-color", "rgba(0,0,0,0.9)"));
-  const [pickerType, setPickerType] = useState<"text" | "stroke" | null>(null);
+  const [textColor, setTextColor] = useState(loadTextColor);
+  const [showPicker, setShowPicker] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controlChannelRef = useRef<BroadcastChannel | null>(null);
 
@@ -97,9 +92,6 @@ export function PopupApp() {
   useEffect(() => {
     try { localStorage.setItem("popup-text-color", textColor); } catch { /* ignore */ }
   }, [textColor]);
-  useEffect(() => {
-    try { localStorage.setItem("popup-stroke-color", strokeColor); } catch { /* ignore */ }
-  }, [strokeColor]);
 
   const handleToggle = () => {
     if (controlChannelRef.current) {
@@ -110,17 +102,18 @@ export function PopupApp() {
   const current = items[items.length - 1];
 
   return (
-    <div className="h-screen text-white flex flex-col select-none">
-      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-2">
+    <div className="h-screen flex flex-col select-none">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-2"
+        style={{ background: "rgba(0,0,0,0.15)" }}>
         {prevItem && (
           <div className="text-center opacity-30 max-w-full">
-            <p className="text-sm leading-relaxed break-words line-clamp-2"
-              style={{ color: textColor, WebkitTextStroke: "1.5px " + strokeColor }}>
+            <p className="text-sm leading-relaxed break-words line-clamp-2 font-medium"
+              style={{ color: textColor }}>
               {prevItem.sourceText}
             </p>
             {prevItem.translatedText && (
               <p className="text-xs mt-0.5"
-                style={{ color: textColor, WebkitTextStroke: "1px " + strokeColor }}>
+                style={{ color: textColor }}>
                 {prevItem.translatedText}
               </p>
             )}
@@ -130,20 +123,20 @@ export function PopupApp() {
         {current ? (
           <div className="text-center max-w-full">
             <p className="text-xl font-bold leading-relaxed break-words"
-              style={{ color: textColor, WebkitTextStroke: "2px " + strokeColor }}>
+              style={{ color: textColor }}>
               {current.sourceText}
             </p>
             {current.translatedText && (
-              <p className="text-base mt-1.5"
-                style={{ color: textColor, WebkitTextStroke: "1.5px " + strokeColor, opacity: 0.85 }}>
+              <p className="text-base mt-1.5 opacity-80"
+                style={{ color: textColor }}>
                 {current.translatedText}
               </p>
             )}
           </div>
         ) : interimText ? (
           <div className="text-center max-w-full">
-            <p className="text-xl italic opacity-60"
-              style={{ color: textColor, WebkitTextStroke: "2px " + strokeColor }}>
+            <p className="text-xl italic opacity-60 font-medium"
+              style={{ color: textColor }}>
               {interimText}
             </p>
           </div>
@@ -154,42 +147,23 @@ export function PopupApp() {
 
       <div className={"flex items-center justify-between px-3 py-1.5 shrink-0 transition-opacity duration-300 " +
         (showUI ? "opacity-100" : "opacity-0 pointer-events-none")}>
-        <div className="flex items-center gap-2 relative">
-          {/* Text color picker */}
+        <div className="flex items-center gap-1.5 relative">
           <button
-            onClick={() => setPickerType(pickerType === "text" ? null : "text")}
+            onClick={() => setShowPicker(!showPicker)}
             className="text-white/40 hover:text-white/70 text-xs cursor-pointer transition-colors flex items-center gap-1"
-            title="字体颜色"
           >
             <span className="inline-block w-3 h-3 rounded-full border border-white/30"
               style={{ background: textColor }} />
-            A
+            颜色
           </button>
-          {/* Stroke color picker */}
-          <button
-            onClick={() => setPickerType(pickerType === "stroke" ? null : "stroke")}
-            className="text-white/40 hover:text-white/70 text-xs cursor-pointer transition-colors flex items-center gap-1"
-            title="描边颜色"
-          >
-            <span className="inline-block w-3 h-3 rounded-full border border-white/30"
-              style={{ background: strokeColor }} />
-            ◼
-          </button>
-
-          {pickerType && (
+          {showPicker && (
             <div className="absolute bottom-full left-0 mb-1 flex gap-1.5 bg-black/70 backdrop-blur rounded-lg p-2 border border-white/10">
-              {(pickerType === "text" ? TEXT_COLORS : STROKE_COLORS).map((c, i) => (
+              {TEXT_COLORS.map((c, i) => (
                 <button
                   key={i}
-                  onClick={() => {
-                    if (pickerType === "text") setTextColor(c);
-                    else setStrokeColor(c);
-                    setPickerType(null);
-                  }}
-                  className={"w-6 h-6 rounded-full border-2 transition-all cursor-pointer " +
-                    (c === (pickerType === "text" ? textColor : strokeColor)
-                      ? "border-white scale-110"
-                      : "border-white/20 hover:border-white/50")}
+                  onClick={() => { setTextColor(c); setShowPicker(false); }}
+                  className={"w-7 h-7 rounded-full border-2 transition-all cursor-pointer " +
+                    (c === textColor ? "border-white scale-110" : "border-white/20 hover:border-white/50")}
                   style={{ background: c }}
                 />
               ))}
