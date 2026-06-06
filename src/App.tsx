@@ -23,7 +23,8 @@ function getStatusDotClass(status: ConnectionStatus, isListening: boolean): stri
 function AppInner() {
   const { items, addSubtitle, correctSubtitle, clearSubtitles } = useSubtitleContext();
   const popupRef = useRef<Window | null>(null);
-  const broadcastRef = useRef<BroadcastChannel | null>(null);
+  const interimChannelRef = useRef<BroadcastChannel | null>(null);
+  const statusChannelRef = useRef<BroadcastChannel | null>(null);
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
@@ -46,25 +47,32 @@ function AppInner() {
 
   const [statusMsg, setStatusMsg] = useState("");
 
+  // Broadcast interim text to popup
   useEffect(() => {
-    if (!broadcastRef.current) return;
-    broadcastRef.current.postMessage({ type: "interim", text: interimText });
+    if (!interimChannelRef.current) return;
+    interimChannelRef.current.postMessage({ type: "interim", text: interimText });
   }, [interimText]);
 
-  const handleToggle = async () => {
-    if (isListening) {
-      stop();
-      setStatusMsg("");
-    } else {
-      setStatusMsg("正在启动语音识别...");
-      try {
-        await start();
-        setStatusMsg("语音识别已启动，请说话");
-      } catch (e) {
-        setStatusMsg("启动失败: " + (e as Error).message);
+  // Broadcast listening status to popup
+  useEffect(() => {
+    if (!statusChannelRef.current) return;
+    statusChannelRef.current.postMessage({ type: "status", isListening });
+  }, [isListening]);
+
+  // Listen for toggle commands from popup
+  useEffect(() => {
+    const controlChannel = new BroadcastChannel("subtitle-control");
+    controlChannel.onmessage = (e) => {
+      if (e.data?.type === "toggle") {
+        if (isListening) {
+          stop();
+        } else {
+          start().catch(() => {});
+        }
       }
-    }
-  };
+    };
+    return () => controlChannel.close();
+  }, [isListening, start, stop]);
 
   const handleClear = () => {
     if (items.length > 0 && window.confirm("确定要清空全部字幕吗？")) {
@@ -78,10 +86,10 @@ function AppInner() {
       return;
     }
 
-    const w = 400;
-    const h = 480;
-    const left = window.screen.availWidth - w - 20;
-    const top = window.screen.availHeight - h - 80;
+    const w = 700;
+    const h = 140;
+    const left = Math.round((window.screen.availWidth - w) / 2);
+    const top = window.screen.availHeight - h - 40;
 
     const popup = window.open(
       "/popup.html",
@@ -91,7 +99,23 @@ function AppInner() {
 
     if (popup) {
       popupRef.current = popup;
-      broadcastRef.current = new BroadcastChannel("subtitle-interim");
+      interimChannelRef.current = new BroadcastChannel("subtitle-interim");
+      statusChannelRef.current = new BroadcastChannel("subtitle-control");
+    }
+  };
+
+  const handleToggle = async () => {
+    if (isListening) {
+      stop();
+      setStatusMsg("");
+    } else {
+      setStatusMsg("正在启动语音识别...");
+      try {
+        await start();
+        setStatusMsg("语音识别已启动，请说话");
+      } catch (e) {
+        setStatusMsg("启动失败: " + (e as Error).message);
+      }
     }
   };
 

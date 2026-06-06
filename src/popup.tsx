@@ -9,19 +9,19 @@ interface SubWindowItem {
 export function PopupApp() {
   const [items, setItems] = useState<SubWindowItem[]>([]);
   const [interimText, setInterimText] = useState("");
+  const [isListening, setIsListening] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const syncChannel = new BroadcastChannel("subtitle-sync");
     const interimChannel = new BroadcastChannel("subtitle-interim");
+    const controlChannel = new BroadcastChannel("subtitle-control");
 
     syncChannel.onmessage = (e) => {
       const msg = e.data;
       if (msg.type === "sync") {
         setItems(msg.items);
-      } else if (msg.type === "clear") {
-        setItems([]);
-        setInterimText("");
+        setIsListening(msg.isListening || false);
       }
     };
 
@@ -31,12 +31,20 @@ export function PopupApp() {
       }
     };
 
+    controlChannel.onmessage = (e) => {
+      if (e.data?.type === "status") {
+        setIsListening(e.data.isListening || false);
+      }
+    };
+
     return () => {
       syncChannel.close();
       interimChannel.close();
+      controlChannel.close();
     };
   }, []);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     const el = containerRef.current;
     if (el) {
@@ -44,42 +52,57 @@ export function PopupApp() {
     }
   }, [items, interimText]);
 
+  const handleToggle = () => {
+    const controlChannel = new BroadcastChannel("subtitle-control");
+    controlChannel.postMessage({ type: "toggle" });
+    controlChannel.close();
+  };
+
+  // Show the latest 2 items
+  const visibleItems = items.slice(-2);
+
   return (
-    <div className="h-screen bg-black/80 backdrop-blur-md text-white flex flex-col">
-      {/* Title bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10 shrink-0 select-none">
-        <span className="text-white/80 text-sm font-medium">🎙️ AI 同声传译</span>
+    <div className="h-screen bg-black/80 backdrop-blur-md text-white flex flex-col select-none">
+      {/* Subtitle content area */}
+      <div className="flex-1 flex flex-col justify-end px-4 pb-2">
+        <div ref={containerRef} className="space-y-1">
+          {visibleItems.length === 0 && !interimText ? (
+            <p className="text-white/30 text-sm text-center">等待字幕...</p>
+          ) : (
+            visibleItems.map(function (item) {
+              return (
+                <div key={item.id} className="text-sm">
+                  <p className="text-white/90 leading-relaxed">{item.sourceText}</p>
+                  {item.translatedText && (
+                    <p className="text-blue-400 leading-relaxed">{item.translatedText}</p>
+                  )}
+                </div>
+              );
+            })
+          )}
+
+          {interimText && (
+            <div className="text-sm opacity-50 italic">
+              <p className="text-white/60">{interimText}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Subtitle content */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto p-3 space-y-2"
-      >
-        {items.length === 0 && !interimText ? (
-          <div className="flex items-center justify-center h-full text-white/30 text-sm">
-            等待字幕...
-          </div>
-        ) : (
-          items.map(function (item) {
-            return (
-              <div key={item.id} className="p-2 bg-white/5 rounded-lg border border-white/10 text-sm">
-                <p className="text-white/90 leading-relaxed">{item.sourceText}</p>
-                {item.translatedText ? (
-                  <p className="text-blue-400 leading-relaxed mt-0.5 pt-0.5 border-t border-white/5">{item.translatedText}</p>
-                ) : (
-                  <p className="text-white/30 text-xs mt-0.5 animate-pulse">翻译中...</p>
-                )}
-              </div>
-            );
-          })
-        )}
-
-        {interimText && (
-          <div className="p-2 bg-white/5 rounded-lg border border-blue-400/20 text-sm opacity-60 italic">
-            <p className="text-white/60">{interimText}</p>
-          </div>
-        )}
+      {/* Bottom bar: start/stop + status */}
+      <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-t border-white/10 shrink-0">
+        <span className="text-white/50 text-xs">🎙️ AI 同传</span>
+        <button
+          onClick={handleToggle}
+          className={
+            "px-4 py-1 rounded-full text-xs font-medium transition-all cursor-pointer " +
+            (isListening
+              ? "bg-red-500/80 text-white hover:bg-red-500"
+              : "bg-blue-500/80 text-white hover:bg-blue-500")
+          }
+        >
+          {isListening ? "停止" : "开始"}
+        </button>
       </div>
     </div>
   );
