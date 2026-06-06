@@ -101,13 +101,13 @@ api/
 | PR2 | 音频捕获与语音识别（百度 ASR REST API + 智能断句） | ✅ master |
 | PR3 | 翻译服务接入（Mock 本地词典 + 百度翻译 API + 双语字幕） | ✅ pr3-translation-service |
 | PR4 | 字幕状态管理（useReducer 状态机 + SubtitleContext + 标记功能） | ✅ pr4-subtitle-manager |
-| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ codex/pr5-use-drag |
-| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ codex/pr6-use-autoscroll |
-| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ codex/pr7-subtitle-components |
-| PR8 | WordPopover — 单词释义弹窗 | ✅ codex/pr7-subtitle-components |
-| PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | ✅ codex/pr9-floating-window |
-| PR10 | FloatingWindow — 桌面歌词风格 + 字体颜色选择 | ✅ codex/pr10-lyrics-style |
-| PR11 | 字幕手动编辑 — inline 编辑 + 自动重译 | ✅ codex/pr11-subtitle-edit |
-| PR12 | 字幕导出（TXT / Markdown / JSON） | ✅ codex/pr12-subtitle-export |
-| PR13 | 上下文修正（根据后文修正前文翻译） | ✅ codex/pr13-context-correction |
+| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ pr5-use-drag |
+| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ pr6-use-autoscroll |
+| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ pr7-subtitle-components |
+| PR8 | WordPopover — 单词释义弹窗 | ✅ pr7-subtitle-components |
+| PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | ✅ pr9-floating-window |
+| PR10 | FloatingWindow — 桌面歌词风格 + 字体颜色选择 | ✅ pr10-lyrics-style |
+| PR11 | 字幕手动编辑 — inline 编辑 + 自动重译 | ✅ pr11-subtitle-edit |
+| PR12 | 字幕导出（TXT / Markdown / JSON） | ✅ pr12-subtitle-export |
+| PR13 | 上下文修正（根据后文修正前文翻译） | ✅ pr13-context-correction |
 | PR14 | 集成联调与 UI 打磨（全链路 + 边界 + 暗色模式） | ⬜ 待开发 |
