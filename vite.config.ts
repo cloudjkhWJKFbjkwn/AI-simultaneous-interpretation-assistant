@@ -25,6 +25,19 @@ function baiduApiPlugin() {
     name: 'baidu-api-proxy',
     configureServer(server: any) {
       // 百度翻译 API 代理
+      server.middlewares.use('/api/dict', async (req: any, res: any) => {
+        try {
+          const word = req.url?.replace('/api/dict/', '').split('?')[0] || '';
+          const fetchRes = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
+          const data = await fetchRes.json();
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(data));
+        } catch (err: any) {
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error: 'Proxy: ' + err.message }));
+        }
+      });
+
       server.middlewares.use('/api/baidu-translate', async (req: any, res: any) => {
         try {
           let body = '';
@@ -91,3 +104,4 @@ function baiduApiPlugin() {
 }
 
 export default defineConfig({ plugins: [react(), tailwindcss(), baiduApiPlugin()] })
+
