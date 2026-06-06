@@ -45,18 +45,7 @@ npm run dev
 
 ### 🌐 线上部署（Vercel）
 
-```bash
-# 一键部署到 Vercel（免费）
-npx vercel --prod
-
-# 在 Vercel Dashboard → Settings → Environment Variables 配置：
-#   BAIDU_API_KEY, BAIDU_SECRET_KEY
-#   BAIDU_APP_ID, BAIDU_TRANSLATE_SECRET_KEY
-#   DEEPSEEK_API_KEY
-```
-
-部署后获得公网地址 https://xxx.vercel.app，随时打开直接演示。
-> ⚠️ **注意**：在线部署（Netlify/Vercel）目前仅支持静态页面浏览，语音识别和翻译需要本地运行（`npm run dev`）。详见 [demo/README.md](demo/README.md)。
+详见 [demo/README.md](demo/README.md)。
 
 ### 🔑 注册 API
 
