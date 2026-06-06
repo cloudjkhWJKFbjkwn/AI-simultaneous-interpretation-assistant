@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, memo, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import type { SubtitleItem as SubtitleItemType } from "../types";
 
 interface SubtitleItemProps {
@@ -7,13 +7,8 @@ interface SubtitleItemProps {
   onWordClick: (word: string, rect: DOMRect) => void;
 }
 
-/**
- * Split source text into clickable word segments.
- * Preserves whitespace between words.
- */
 function splitWords(text: string): { word: string; index: number }[] {
   const segments: { word: string; index: number }[] = [];
-  // Match word characters including contractions like don't, it's
   const regex = /[a-zA-Z]+(?:'[a-zA-Z]+)?/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
@@ -39,7 +34,6 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
     [onWordClick]
   );
 
-  // Render source text with clickable words
   const renderSourceText = () => {
     const words = splitWords(item.sourceText);
     if (words.length === 0) {
@@ -50,7 +44,6 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
     let lastIndex = 0;
 
     for (const seg of words) {
-      // Add whitespace/punctuation before this word
       if (seg.index > lastIndex) {
         elements.push(
           <span key={"pre-" + lastIndex}>
@@ -58,7 +51,6 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
           </span>
         );
       }
-      // Add clickable word
       elements.push(
         <span
           key={"w-" + seg.index}
@@ -72,7 +64,6 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
       lastIndex = seg.index + seg.word.length;
     }
 
-    // Add trailing text
     if (lastIndex < item.sourceText.length) {
       elements.push(
         <span key={"post-" + lastIndex}>
@@ -117,4 +108,6 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
   );
 }
 
-export const SubtitleItem = memo(SubtitleItemInner);
+export const SubtitleItem = SubtitleItemInner;
+
+

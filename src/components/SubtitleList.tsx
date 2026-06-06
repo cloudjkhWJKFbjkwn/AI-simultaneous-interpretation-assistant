@@ -20,19 +20,19 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
 
   const handleWordClick = useCallback(
     (word: string, rect: DOMRect) => {
-      // Open popover immediately (loading state)
       openWord(word, rect);
 
-      // Check local dictionary first
+      // First try local dictionary (instant)
       const localDef = lookupWord(word);
       if (localDef) {
         updateDefinition(localDef);
-      } else {
-        // Fall back to online dictionary API
-        fetchWordDefinition(word).then(def => {
-          updateDefinition(def || "暂无释义");
-        });
+        return;
       }
+
+      // Fallback to Baidu Translate API
+      fetchWordDefinition(word).then(def => {
+        updateDefinition(def || "暂无释义");
+      });
     },
     [openWord, updateDefinition]
   );
