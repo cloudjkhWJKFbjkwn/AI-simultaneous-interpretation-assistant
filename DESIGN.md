@@ -1,68 +1,109 @@
-# AI 鍚屽０浼犺瘧鍔╂墜 鈥?璁捐鏂囨。
+﻿﻿# AI 同声传译助手 — 设计文档
 
-## 1. 椤圭洰姒傝堪
+## 1. 项目概述
 
-**鐩爣**锛氭祻瑙堝櫒绔疄鏃惰嫳鏂囪闊宠瘑鍒瓧骞曞伐鍏凤紝闈㈠悜瑙傜湅鑻辨枃婕旇銆佹妧鏈垎浜€佸湪绾胯绋嬬瓑鍦烘櫙銆?
-**鏍稿績鐢ㄦ埛浠峰€?*锛氳鍑鸿嫳鏂?鈫?瀹炴椂鏄剧ず鏂囧瓧瀛楀箷锛屾櫤鑳芥柇鍙ヤ繚璇侀槄璇绘祦鐣呫€?
-**鍝佺墝鎰挎櫙**锛氬儚鐪熶汉鍚屼紶璇戝憳涓€鏍峰伐浣溾€斺€斿厛蹇€熺粰鍑鸿瘧鏂囷紝鍐嶆牴鎹悗鏂囦慨姝ｅ墠鏂囬敊璇紝瀛楀箷濮嬬粓鍔ㄦ€佷紭鍖栥€?
+**目标**：浏览器端实时英文语音识别字幕工具，面向观看英文演讲、技术分享、在线课程等场景。
+
+**核心用户价值**：说出英文 → 实时显示文字字幕，智能断句保证阅读流畅。
+
+**品牌愿景**：像真人同传译员一样工作——先快速给出译文，再根据后文修正前文错误，字幕始终动态优化。
+
 ---
 
-## 2. 鏋舵瀯婕旇繘
+## 2. 架构演进
 
-### 2.1 鍒濈増锛歐eb Speech API
+### 2.1 初版：Web Speech API
 
 | | |
 |------|------|
-| ASR 寮曟搸 | 娴忚鍣ㄥ唴缃?`SpeechRecognition`锛圕hrome/Edge锛?|
-| 缃戠粶渚濊禆 | Google 璇煶璇嗗埆鏈嶅姟鍣?|
-| 闂 | **涓浗澶ч檰 Google 鏈嶅姟琚 鈫?`network` 閿欒 鈫?瀹屽叏涓嶅彲鐢?* |
+| ASR 引擎 | 浏览器内置 `SpeechRecognition`（Chrome/Edge） |
+| 网络依赖 | Google 语音识别服务器 |
+| 问题 | **中国大陆 Google 服务被墙 → `network` 错误 → 完全不可用** |
 
-### 2.2 鏈€缁堢増锛氱櫨搴?AI 鐭闊宠瘑鍒?
+### 2.2 最终版：百度 AI 短语音识别
+
 ```
-鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?    PCM 16kHz     鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?   HTTP POST    鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹?楹﹀厠椋?   鈹?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈫?鈹?AudioCapture     鈹?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈫?鈹?/api/baidu-asr鈹?鈹?getUserMedia鈹?                 鈹?AudioContext      鈹?                鈹?(Vite 涓棿浠? 鈹?鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                   鈹?ScriptProcessor   鈹?                鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                       鈹?                                                                   server-side fetch
-                                                                          鈹?                                                                鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈻尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                                                鈹?vop.baidu.com     鈹?                                                                鈹?/server_api       鈹?                                                                鈹?(REST API)        鈹?                                                                鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                                                         鈹?                                                                 璇嗗埆鏂囨湰 + 璇箟鍒嗗彞
-                                                                         鈹?                                                                鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈻尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                                                鈹?TranslationService 鈹?                                                                鈹?Mock / 鐧惧害缈昏瘧API  鈹?                                                                鈹?(Vite 涓棿浠朵唬鐞?   鈹?                                                                鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                                                         鈹?                                                                  鍙岃瀛楀箷灞曠ず
+┌──────────┐     PCM 16kHz     ┌──────────────────┐    HTTP POST    ┌──────────────┐
+│ 麦克风    │ ─────────────────→ │ AudioCapture     │ ──────────────→ │ /api/baidu-asr│
+│ getUserMedia│                  │ AudioContext      │                 │ (Vite 中间件) │
+└──────────┘                    │ ScriptProcessor   │                 └──────┬───────┘
+                                 └──────────────────┘                        │
+                                                                   server-side fetch
+                                                                          │
+                                                                ┌─────────▼─────────┐
+                                                                │ vop.baidu.com     │
+                                                                │ /server_api       │
+                                                                │ (REST API)        │
+                                                                └────────┬──────────┘
+                                                                         │
+                                                                 识别文本 + 语义分句
+                                                                         │
+                                                                ┌────────▼──────────┐
+                                                                │ TranslationService │
+                                                                │ Mock / 百度翻译API  │
+                                                                │ (Vite 中间件代理)   │
+                                                                └────────┬──────────┘
+                                                                         │
+                                                                  双语字幕展示
 ```
 
-**涓轰粈涔堜笉鐢ㄥ疄鏃惰闊宠瘑鍒?(WebSocket) 鑰岀敤鐭闊宠瘑鍒?(REST)锛?*
+**为什么不用实时语音识别 (WebSocket) 而用短语音识别 (REST)？**
 
-| 灏濊瘯 | 鏂规硶 | 缁撴灉 |
+| 尝试 | 方法 | 结果 |
 |------|------|------|
 | WebSocket `?sn=TOKEN` | token-based auth | `-3008 parse appid failed` |
 | WebSocket + `appid` | app-based auth | `-3008 parse appkey failed` |
-| WebSocket + `appid` + `appkey` | 鍙岃璇?| `-3004 Invalid param sn` |
-| WebSocket 鏃?`?sn=` + 甯у唴 `token` | 甯у唴璁よ瘉 | 鏃犳硶寤虹珛杩炴帴 (code=1006) |
-| **REST API `server_api` + Vite 浠ｇ悊** | server-to-server | 鉁?鎴愬姛 |
+| WebSocket + `appid` + `appkey` | 双认证 | `-3004 Invalid param sn` |
+| WebSocket 无 `?sn=` + 帧内 `token` | 帧内认证 | 无法建立连接 (code=1006) |
+| **REST API `server_api` + Vite 代理** | server-to-server | ✅ 成功 |
 
-**鏍瑰洜**锛歚wss://vop.baidu.com/realtime_asr` 鐨?`sn` token 璁よ瘉涓?`appid`/`appkey` 甯у唴璁よ瘉瀛樺湪鍐茬獊锛屽娆＄粍鍚堝潎澶辫触銆傜煭璇煶 REST API 閫氳繃鏈嶅姟绔唬鐞嗗交搴曠粫寮€姝ら棶棰樸€?
+**根因**：`wss://vop.baidu.com/realtime_asr` 的 `sn` token 认证与 `appid`/`appkey` 帧内认证存在冲突，多次组合均失败。短语音 REST API 通过服务端代理彻底绕开此问题。
+
 ---
 
-## 3. 鏁版嵁娴佽璁?
+## 3. 数据流设计
+
 ```
-[楹﹀厠椋嶿 鈹€鈹€PCM鈹€鈹€鈫?[AudioCapture] 鈹€鈹€Int16Array鈹€鈹€鈫?[SpeechRecognitionService]
-                                                        鈹?                                              闊抽噺妫€娴?+ 鏂彞閫昏緫
-                                                        鈹?                                               HTTP POST /api/baidu-asr
-                                                        鈹?                                              Vite Middleware 鈫?鐧惧害 server_api
-                                                        鈹?                                                杩斿洖 JSON 璇嗗埆缁撴灉
-                                                        鈹?                                              textBuffer 绱Н + 璇箟鍒嗗彞
-                                                        鈹?                                          鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹粹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                          鈹? interim (杩涜涓?  final (瀹屾暣鍙? 鈹?                                          鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                                         鈹?                                                  [TranslationService]
-                                                  Mock / 鐧惧害缈昏瘧 API
-                                                         鈹?                                                  [SubtitleManager]
-                                                         鈹?                                          鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                          鈹? addSubtitle  correctSubtitle  鈹?                                          鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹尖攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?                                                         鈹?                                                  [Subtitle UI]
-                                                  (鎮诞绐楁覆鏌?
+[麦克风] ──PCM──→ [AudioCapture] ──Int16Array──→ [SpeechRecognitionService]
+                                                        │
+                                              音量检测 + 断句逻辑
+                                                        │
+                                               HTTP POST /api/baidu-asr
+                                                        │
+                                              Vite Middleware → 百度 server_api
+                                                        │
+                                                返回 JSON 识别结果
+                                                        │
+                                              textBuffer 累积 + 语义分句
+                                                        │
+                                          ┌──────────────┴──────────────┐
+                                          │  interim (进行中)  final (完整句) │
+                                          └──────────────┬──────────────┘
+                                                         │
+                                                  [TranslationService]
+                                                  Mock / 百度翻译 API
+                                                         │
+                                                  [SubtitleManager]
+                                                         │
+                                          ┌──────────────┼──────────────┐
+                                          │  addSubtitle  correctSubtitle  │
+                                          └──────────────┼──────────────┘
+                                                         │
+                                                  [Subtitle UI]
+                                                  (悬浮窗渲染)
 ```
 
-### 鏍稿績鎺ュ彛
+### 核心接口
 
 ```typescript
-// 闊抽閲囬泦
+// 音频采集
 interface AudioCapture {
   start(onPcmData: (data: Int16Array, sampleRate: number) => void): Promise<void>;
   stop(): void;
   isActive(): boolean;
 }
 
-// 璇煶璇嗗埆鏈嶅姟
+// 语音识别服务
 interface SpeechRecognitionService {
   start(onResult: RecognitionCallback, onError: ErrorCallback, onEnd: EndCallback): void;
   stop(): void;
@@ -72,296 +113,557 @@ type RecognitionCallback = (text: string, isFinal: boolean) => void;
 type ErrorCallback = (error: string) => void;
 type EndCallback = () => void;
 
-// 缈昏瘧鏈嶅姟 (PR3)
+// 翻译服务 (PR3)
 interface TranslationService {
   translate(text: string): Promise<string>;
 }
 
-// 瀛楀箷鏉＄洰
+// 字幕条目
 interface SubtitleItem {
   id: string;
   sourceText: string;
   translatedText: string;
   timestamp: number;
   marked: boolean;
-  version: number; // 0 = 鍒濊瘧, >0 = 淇娆℃暟
+  version: number; // 0 = 初译, >0 = 修正次数
 }
 ```
 
 ---
 
-## 4. PR 鎷嗚В锛堝叡 9 涓?PR锛?
-### PR1锛氶」鐩剼鎵嬫灦鎼缓 鉁?
-**涓轰粈涔堣繖涓?PR 鍏堝仛锛?*
+## 4. PR 拆解（共 9 个 PR）
 
-浠讳綍杞欢椤圭洰鐨勭涓€姝ラ兘鏄缓绔?鍙繍琛岀殑绌哄３"鈥斺€斾竴涓兘浠庨浂鍒颁竴璺戣捣鏉ョ殑楠ㄦ灦銆傝繖涓?PR 涓嶆秹鍙婁换浣曚笟鍔￠€昏緫锛岀函绮规槸鎼缓鍩虹璁炬柦銆傞€夋嫨 Vite + React 18 + TypeScript + Tailwind CSS v4 杩欏鎶€鏈爤锛屾槸鍥犱负瀹冨吋椤句簡寮€鍙戜綋楠岋紙Vite 鐨勬瀬閫?HMR锛夈€佺被鍨嬪畨鍏紙TypeScript锛夈€佸拰鐢熶骇绾?UI 寮€鍙戞晥鐜囷紙Tailwind 鐨?utility-first 妯″紡锛夈€?
-涓夋爮寮忓竷灞€锛堥《閮ㄧ姸鎬佹爮 鈫?涓棿寮规€у瓧骞曞尯 鈫?搴曢儴鎺у埗鏍忥級濂犲畾浜嗘暣涓簲鐢ㄧ殑瑙嗚鍩鸿皟锛氫笂鏂瑰睍绀?绯荤粺鍦ㄥ仛浠€涔?锛屼腑闂村睍绀?璇嗗埆鍑轰簡浠€涔?锛屼笅鏂规彁渚?鐢ㄦ埛鑳藉仛浠€涔?銆傝繖绉嶅竷灞€璁捐鍙傝€冧簡 OBS 鍜?Streamlabs 绛夌洿鎾伐鍏风殑淇℃伅灞傜骇妯″紡銆?
-**璁捐鍐崇瓥**锛?- **涓轰粈涔堜笉鐢?Create React App锛?* CRA 宸蹭笉鍐嶇淮鎶わ紝Vite 鐨?HMR 閫熷害鍦ㄥ紑鍙戦樁娈佃嚦鍏抽噸瑕侊紙鏀瑰姩浠ｇ爜鍒版祻瑙堝櫒鍒锋柊 < 100ms锛夈€?- **涓轰粈涔?Tailwind v4 鑰屼笉鏄?CSS Modules锛?* Tailwind 鐨?`@tailwindcss/vite` 鎻掍欢瀹炵幇浜嗙湡姝ｇ殑闆堕厤缃泦鎴愶紝涓嶉渶瑕?`postcss.config.js` 鎴?`tailwind.config.js`锛屼笖 v4 鐨?`@layer` 璇硶璁╂繁鑹叉ā寮忛€傞厤鍙樺緱鏋佷负绠€鍗曘€?- **鐘舵€佹寚绀虹伅涓轰粈涔堣鍛煎惛鍔ㄧ敾锛?* 鍚屼紶鍦烘櫙涓嬬敤鎴烽渶瑕佸揩閫熺灔涓€鐪煎氨鐭ラ亾"鐜板湪鍦ㄤ笉鍦ㄥ伐浣?锛岀孩/榛?缁夸笁鑹?+ `animate-pulse` 鎻愪緵浜嗘棤闇€闃呰鏂囧瓧鐨勫嵆鏃舵劅鐭ャ€?
-**瀹炵幇鎬濊矾**锛?- 浣跨敤 Vite 鍒濆鍖?React 18 + TypeScript 椤圭洰锛孷ite 浣滀负鏋勫缓宸ュ叿鎻愪緵鏈€蹇殑 HMR 浣撻獙
-- 瀹夎 Tailwind CSS v4 骞朵娇鐢?`@tailwindcss/vite` 鎻掍欢闆堕厤缃泦鎴?- 閲囩敤 utility-first 鐨勬牱寮忕瓥鐣ワ紝涓嶅啓鑷畾涔?CSS锛屽叏閮ㄩ€氳繃 Tailwind 鍘熷瓙绫诲畬鎴?- 椤甸潰甯冨眬閲囩敤涓夋爮寮忥細椤堕儴鏍囬鏍忥紙鍝佺墝灞曠ず + 鐘舵€佹寚绀虹伅锛夆啋 涓棿瀛楀箷鍖猴紙flex-1 鎾戞弧鍓╀綑绌洪棿锛夆啋 搴曢儴鎺у埗鏍忥紙鍥哄畾 footer锛?- 鐘舵€佹寚绀虹伅锛氱孩鐐?= 鏂紑銆侀粍鐐?= 杩炴帴涓€佺豢鐐?= 鐩戝惉涓紝浣跨敤 Tailwind 鐨?`animate-pulse` 瀹炵幇鍛煎惛鏁堟灉
+### PR1：项目脚手架搭建 ✅
 
-**鍏抽敭鏂囦欢**锛?- `vite.config.ts` 鈥?Vite 閰嶇疆锛屽紩鍏?React + Tailwind 鎻掍欢
-- `package.json` 鈥?椤圭洰渚濊禆澹版槑
-- `src/index.css` 鈥?Tailwind 鍏ュ彛 + 鍏ㄥ眬鍩虹鏍峰紡
-- `src/App.tsx` 鈥?涓诲竷灞€缁勪欢
-- `src/main.tsx` 鈥?React 鎸傝浇鍏ュ彛
-- `index.html` 鈥?HTML 妯℃澘
+**为什么这个 PR 先做？**
 
-**楠屾敹鏍囧噯**锛?- `npm run dev` 姝ｅ父鍚姩锛屾祻瑙堝櫒璁块棶 `localhost:5173` 鐪嬪埌瀹屾暣甯冨眬
-- `tsc --noEmit` 闆剁被鍨嬮敊璇?- `vite build` 鐢熶骇鏋勫缓閫氳繃锛屼骇鐗╁ぇ灏忓悎鐞嗭紙<200KB gzip锛?
+任何软件项目的第一步都是建立"可运行的空壳"——一个能从零到一跑起来的骨架。这个 PR 不涉及任何业务逻辑，纯粹是搭建基础设施。选择 Vite + React 18 + TypeScript + Tailwind CSS v4 这套技术栈，是因为它兼顾了开发体验（Vite 的极速 HMR）、类型安全（TypeScript）、和生产级 UI 开发效率（Tailwind 的 utility-first 模式）。
+
+三栏式布局（顶部状态栏 → 中间弹性字幕区 → 底部控制栏）奠定了整个应用的视觉基调：上方展示"系统在做什么"，中间展示"识别出了什么"，下方提供"用户能做什么"。这种布局设计参考了 OBS 和 Streamlabs 等直播工具的信息层级模式。
+
+**设计决策**：
+- **为什么不用 Create React App？** CRA 已不再维护，Vite 的 HMR 速度在开发阶段至关重要（改动代码到浏览器刷新 < 100ms）。
+- **为什么 Tailwind v4 而不是 CSS Modules？** Tailwind 的 `@tailwindcss/vite` 插件实现了真正的零配置集成，不需要 `postcss.config.js` 或 `tailwind.config.js`，且 v4 的 `@layer` 语法让深色模式适配变得极为简单。
+- **状态指示灯为什么要呼吸动画？** 同传场景下用户需要快速瞥一眼就知道"现在在不在工作"，红/黄/绿三色 + `animate-pulse` 提供了无需阅读文字的即时感知。
+
+**实现思路**：
+- 使用 Vite 初始化 React 18 + TypeScript 项目，Vite 作为构建工具提供最快的 HMR 体验
+- 安装 Tailwind CSS v4 并使用 `@tailwindcss/vite` 插件零配置集成
+- 采用 utility-first 的样式策略，不写自定义 CSS，全部通过 Tailwind 原子类完成
+- 页面布局采用三栏式：顶部标题栏（品牌展示 + 状态指示灯）→ 中间字幕区（flex-1 撑满剩余空间）→ 底部控制栏（固定 footer）
+- 状态指示灯：红点 = 断开、黄点 = 连接中、绿点 = 监听中，使用 Tailwind 的 `animate-pulse` 实现呼吸效果
+
+**关键文件**：
+- `vite.config.ts` — Vite 配置，引入 React + Tailwind 插件
+- `package.json` — 项目依赖声明
+- `src/index.css` — Tailwind 入口 + 全局基础样式
+- `src/App.tsx` — 主布局组件
+- `src/main.tsx` — React 挂载入口
+- `index.html` — HTML 模板
+
+**验收标准**：
+- `npm run dev` 正常启动，浏览器访问 `localhost:5173` 看到完整布局
+- `tsc --noEmit` 零类型错误
+- `vite build` 生产构建通过，产物大小合理（<200KB gzip）
+
 ---
 
-### PR2锛氶煶棰戞崟鑾蜂笌璇煶璇嗗埆 鉁?
-**涓轰粈涔堣繖涓?PR 鏄牳蹇冪獊鐮达紵**
+### PR2：音频捕获与语音识别 ✅
 
-绗竴鐗堜娇鐢ㄦ祻瑙堝櫒鍐呯疆 `SpeechRecognition`锛圵eb Speech API锛夛紝浣嗚 API 渚濊禆 Google 鐨勮闊宠瘑鍒湇鍔″櫒鈥斺€斿湪涓浗澶ч檰琚锛岀洿鎺ユ姤 `network` 閿欒銆傝繖鏄」鐩潰涓寸殑绗竴涓?鐢熸鏀稿叧"闂锛氬鏋滆繛璇煶閮借瘑鍒笉浜嗭紝鍚庨潰鐨勪竴鍒囷紙缈昏瘧銆佸瓧骞曘€乀TS锛夐兘鏃犱粠璋堣捣銆?
-PR2 鐨勬牳蹇冧换鍔℃槸**鎵惧埌涓€鏉″湪涓浗澶ч檰鍙敤鐨勮闊宠瘑鍒€氳矾**銆傜粡杩囧杞妧鏈皟鐮斿拰娴嬭瘯锛屾渶缁堟柟妗堟槸锛氱櫨搴?AI 鐭闊宠瘑鍒?REST API + Vite 鏈嶅姟绔腑闂翠欢浠ｇ悊銆?
-**鎶€鏈€夊瀷鐨勫潕鍧峰巻绋?*锛堣繖浜涘け璐ュ皾璇曟湰韬氨鏄疂璐电殑鐭ヨ瘑娌夋穩锛夛細
+**为什么这个 PR 是核心突破？**
 
-| 灏濊瘯 | 鏂规 | 缁撴灉 | 鏍瑰洜 |
+第一版使用浏览器内置 `SpeechRecognition`（Web Speech API），但该 API 依赖 Google 的语音识别服务器——在中国大陆被墙，直接报 `network` 错误。这是项目面临的第一个"生死攸关"问题：如果连语音都识别不了，后面的一切（翻译、字幕、TTS）都无从谈起。
+
+PR2 的核心任务是**找到一条在中国大陆可用的语音识别通路**。经过多轮技术调研和测试，最终方案是：百度 AI 短语音识别 REST API + Vite 服务端中间件代理。
+
+**技术选型的坎坷历程**（这些失败尝试本身就是宝贵的知识沉淀）：
+
+| 尝试 | 方案 | 结果 | 根因 |
 |------|------|------|------|
-| 1 | Web Speech API | `network` 閿欒 | Google 琚 |
-| 2 | 鐧惧害 WebSocket API + `?sn=TOKEN` | `-3008 parse appid failed` | token 璁よ瘉鍐茬獊 |
-| 3 | WebSocket + `appid` 甯у唴璁よ瘉 | `-3008 parse appkey failed` | 鍙岃璇佹満鍒朵笉鍏煎 |
-| 4 | WebSocket + `appid` + `appkey` 鍙岃璇?| `-3004 Invalid param sn` | sn 鍙傛暟鏍煎紡瑕佹眰鏈煡 |
-| 5 | WebSocket 鏃?`?sn=` + 甯у唴 `token` | 杩炴帴澶辫触 code=1006 | 鍗忚鎻℃墜琚嫆 |
-| **6** | **REST API + Vite 浠ｇ悊** | **鉁?鎴愬姛** | 鏈嶅姟绔埌鏈嶅姟绔棤 CORS |
+| 1 | Web Speech API | `network` 错误 | Google 被墙 |
+| 2 | 百度 WebSocket API + `?sn=TOKEN` | `-3008 parse appid failed` | token 认证冲突 |
+| 3 | WebSocket + `appid` 帧内认证 | `-3008 parse appkey failed` | 双认证机制不兼容 |
+| 4 | WebSocket + `appid` + `appkey` 双认证 | `-3004 Invalid param sn` | sn 参数格式要求未知 |
+| 5 | WebSocket 无 `?sn=` + 帧内 `token` | 连接失败 code=1006 | 协议握手被拒 |
+| **6** | **REST API + Vite 代理** | **✅ 成功** | 服务端到服务端无 CORS |
 
-**鏂彞绛栫暐涓轰粈涔堟槸涓夊眰锛?* 鍗曚竴绛栫暐閮芥湁缂洪櫡锛氱函闊抽噺鏂彞鍦ㄨ儗鏅櫔闊充笅涓嶅彲闈狅紱绾畾鏃舵柇鍙ヤ細鎶婂彞瀛愬垏寰楁敮绂荤牬纰庯紱绾爣鐐规柇鍙ヤ緷璧栬瘑鍒粨鏋滆冻澶熷噯纭€備笁灞備簰琛モ€斺€旈煶閲忓仛涓诲姏锛堣嚜鐒跺仠椤胯Е鍙戯級锛屽畾鏃跺仛鍏滃簳锛堥槻姝㈤暱鍙ュ爢绉級锛屾爣鐐瑰仛绮句慨锛堣涔夊畬鏁存€ф鏌ワ級鈥斺€旀墠鑳藉湪瀹為檯鍦烘櫙涓ǔ瀹氬伐浣溿€?
-**璁捐鍐崇瓥**锛?- **涓轰粈涔堢敤 Vite 涓棿浠惰€屼笉鏄?Vercel Function锛?* 寮€鍙戦樁娈?Vercel CLI 涔熸湁娌欑闂锛孷ite 涓棿浠跺彲浠ョ洿鎺ュ湪 `vite.config.ts` 涓唴鑱斿疄鐜帮紝闆堕澶栦緷璧栵紝涓?HMR 涓嶄腑鏂€傜敓浜ч儴缃叉椂鍐嶅垏鎹㈠埌 `api/baidu-token.ts`銆?- **涓轰粈涔?API Key 纭紪鐮佸湪 vite.config.ts锛?* 寮€鍙戦樁娈电殑濡ュ崗銆傜悊鎯虫柟妗堟槸 `.env` + `import.meta.env`锛屼絾 Codex sandbox 涓?PowerShell 鐜鍙橀噺鐨勪紶閫掓湁鍏煎鎬ч棶棰樸€傜敓浜ч儴缃茬敤 Vercel 鐜鍙橀噺褰诲簳瑙ｅ喅銆?- **AudioContext.sampleRate 涓轰粈涔堟槸绾?16000Hz锛?* 涓嶆槸鎴戜滑閫夋嫨鐨勨€斺€旀祻瑙堝櫒鐨?`AudioContext` 浼氭牴鎹郴缁熺‖浠惰嚜鍔ㄩ€夋嫨閲囨牱鐜囷紝澶у鏁拌澶囬粯璁?44100Hz 鎴?48000Hz锛屼絾鎴戜滑瀹為檯浼犵粰鐧惧害鐨?rate 蹇呴』涓庡疄闄呴噰闆嗙殑閲囨牱鐜囦竴鑷达紝鍚﹀垯浼氭姤 `3311 param rate invalid`銆?
-**瀹炵幇鎬濊矾**锛?- **AudioCapture 妯″潡**锛氬皝瑁?`getUserMedia` 鑾峰彇楹﹀厠椋庢潈闄?鈫?`AudioContext` 鍒涘缓闊抽澶勭悊鍥?鈫?`ScriptProcessorNode` 鐩戝惉 `audioprocess` 浜嬩欢 鈫?灏?Float32 閲囨牱杞负 Int16 PCM 鏁版嵁 鈫?閫氳繃鍥炶皟鎺ㄩ€佺粰涓嬫父
-- **SpeechRecognitionService 妯″潡**锛氭帴鏀?PCM 鏁版嵁 鈫?闊抽噺 RMS 妫€娴?鈫?绱Н鍒?`audioChunks[]` 鈫?闈欓煶瓒?1 绉掕Е鍙戝彂閫?鈫?HTTP POST 鍒?`/api/baidu-asr` 鈫?鐧惧害杩斿洖璇嗗埆鏂囨湰 鈫?绱Н鍒?`textBuffer` 鈫?璇箟鍒嗗彞锛堟寜 `.` `!` `?`锛夆啋 杈撳嚭 `interim`锛堣繘琛屼腑锛夊拰 `final`锛堝畬鏁村彞锛変簨浠?- **Vite 涓棿浠?`/api/baidu-token`**锛氱敤 API Key + Secret Key 鍚?`aip.baidubce.com` 鎹㈠彇 `access_token`锛岀紦瀛?30 澶╅伩鍏嶉噸澶嶈姹?- **Vite 涓棿浠?`/api/baidu-asr`**锛氭帴鏀跺墠绔彂鏉ョ殑 PCM 闊抽 鈫?杞彂鍒?`vop.baidu.com/server_api` 鈫?杩斿洖 JSON 璇嗗埆缁撴灉锛坄err_no: 0` 琛ㄧず鎴愬姛锛宍result[0]` 涓鸿瘑鍒枃鏈級
-- **useSpeechRecognition Hook**锛氱粺涓€绠＄悊 AudioCapture 鍜?SpeechRecognitionService 鐨勭敓鍛藉懆鏈?鈫?鏆撮湶 `start/stop` 鏂规硶鍜?`interimText/completedSentences/isListening/error` 鐘舵€?
-**涓夊眰鏂彞绛栫暐**锛?1. **闊抽噺瑙﹀彂** 鈥?杩炵画 8 甯ч煶棰?RMS < 600 鈫?绾?1 绉掑仠椤?鈫?鑷姩鍒囧壊鍙戦€?2. **瀹氭椂鍏滃簳** 鈥?鏈€闀?3 绉掓棤鍋滈】 鈫?寮哄埗鍙戦€侊紝閬垮厤闀垮彞鏃犻檺鍫嗙Н
-3. **璇箟鍒嗗彞** 鈥?璇嗗埆鏂囨湰绱鍚庢寜鏍囩偣锛坄.!?`锛? 80 瀛楃闀垮害浜屾鍒囧壊
+**断句策略为什么是三层？** 单一策略都有缺陷：纯音量断句在背景噪音下不可靠；纯定时断句会把句子切得支离破碎；纯标点断句依赖识别结果足够准确。三层互补——音量做主力（自然停顿触发），定时做兜底（防止长句堆积），标点做精修（语义完整性检查）——才能在实际场景中稳定工作。
 
-**鍏抽敭鏂囦欢**锛?- `src/services/AudioCapture.ts` 鈥?闊抽閲囬泦 + PCM 杈撳嚭
-- `src/services/SpeechRecognitionService.ts` 鈥?鐧惧害 ASR 瀹㈡埛绔?+ 鏂彞寮曟搸
-- `src/hooks/useSpeechRecognition.ts` 鈥?React Hook 鐘舵€佺鐞?- `vite.config.ts` 鈥?涓棿浠朵唬鐞嗭紙`/api/baidu-token` + `/api/baidu-asr`锛?
-**楠屾敹鏍囧噯**锛?- 鐐瑰嚮銆屽紑濮嬬洃鍚€嶁啋 鍏佽楹﹀厠椋?鈫?鐘舵€佹樉绀恒€岀洃鍚腑銆?- 璇磋嫳鏂?鈫?1-3 绉掑唴鍦ㄩ〉闈㈢湅鍒拌瘑鍒枃鏈?- 鍋滈】 ~1 绉掕嚜鍔ㄥ垎鍙ワ紝鏄剧ず涓虹嫭绔嬪瓧骞曟潯鐩?- 鐐瑰嚮銆屽仠姝㈢洃鍚€嶁啋 楹﹀厠椋庨噴鏀撅紝鐘舵€佸洖鍒般€屽緟鍛姐€?
----
+**设计决策**：
+- **为什么用 Vite 中间件而不是 Vercel Function？** 开发阶段 Vercel CLI 也有沙箱问题，Vite 中间件可以直接在 `vite.config.ts` 中内联实现，零额外依赖，且 HMR 不中断。生产部署时再切换到 `api/baidu-token.ts`。
+- **为什么 API Key 硬编码在 vite.config.ts？** 开发阶段的妥协。理想方案是 `.env` + `import.meta.env`，但 Codex sandbox 下 PowerShell 环境变量的传递有兼容性问题。生产部署用 Vercel 环境变量彻底解决。
+- **AudioContext.sampleRate 为什么是约 16000Hz？** 不是我们选择的——浏览器的 `AudioContext` 会根据系统硬件自动选择采样率，大多数设备默认 44100Hz 或 48000Hz，但我们实际传给百度的 rate 必须与实际采集的采样率一致，否则会报 `3311 param rate invalid`。
 
-### PR3锛氱炕璇戞湇鍔℃帴鍏?鉁?
-**鐩爣**锛氬皢鑻辨枃璇嗗埆缁撴灉瀹炴椂缈昏瘧涓轰腑鏂囷紝鏀寔 Mock 鏈湴璇嶅吀鍜岀櫨搴︽枃鏈炕璇?API 涓ょ绛栫暐銆?
-**涓轰粈涔堟斁鍦?PR3锛?*
+**实现思路**：
+- **AudioCapture 模块**：封装 `getUserMedia` 获取麦克风权限 → `AudioContext` 创建音频处理图 → `ScriptProcessorNode` 监听 `audioprocess` 事件 → 将 Float32 采样转为 Int16 PCM 数据 → 通过回调推送给下游
+- **SpeechRecognitionService 模块**：接收 PCM 数据 → 音量 RMS 检测 → 累积到 `audioChunks[]` → 静音超 1 秒触发发送 → HTTP POST 到 `/api/baidu-asr` → 百度返回识别文本 → 累积到 `textBuffer` → 语义分句（按 `.` `!` `?`）→ 输出 `interim`（进行中）和 `final`（完整句）事件
+- **Vite 中间件 `/api/baidu-token`**：用 API Key + Secret Key 向 `aip.baidubce.com` 换取 `access_token`，缓存 30 天避免重复请求
+- **Vite 中间件 `/api/baidu-asr`**：接收前端发来的 PCM 音频 → 转发到 `vop.baidu.com/server_api` → 返回 JSON 识别结果（`err_no: 0` 表示成功，`result[0]` 为识别文本）
+- **useSpeechRecognition Hook**：统一管理 AudioCapture 和 SpeechRecognitionService 的生命周期 → 暴露 `start/stop` 方法和 `interimText/completedSentences/isListening/error` 状态
 
-PR2 瀹屾垚浜?鍚噦鑻辨枃"锛孭R3 瑕佸疄鐜?缈昏瘧鎴愪腑鏂?鈥斺€旇繖鏄骇鍝佷粠"鑻辨枃杞啓宸ュ叿"鍒?鍚屽０浼犺瘧鍔╂墜"鐨勫叧閿竴姝ャ€侾R3 鐙珛浜?PR2 鐨勯煶棰戦摼璺紝浜岃€呴€氳繃 `useSpeechRecognition` 鏆撮湶鐨?`completedSentences` 鎺ュ彛瑙ｈ€︺€?
-**涓轰粈涔堢暀涓や釜缈昏瘧绛栫暐锛圡ock + 鐧惧害 API锛夛紵**
+**三层断句策略**：
+1. **音量触发** — 连续 8 帧音频 RMS < 600 → 约 1 秒停顿 → 自动切割发送
+2. **定时兜底** — 最长 3 秒无停顿 → 强制发送，避免长句无限堆积
+3. **语义分句** — 识别文本累计后按标点（`.!?`）+ 80 字符长度二次切割
 
-杩欎笉鏄繃搴﹁璁°€侻ock 妯″紡锛堟湰鍦拌瘝鍏告槧灏勶級鐨勪环鍊煎湪浜庯細
-1. **寮€鍙戞棤缃戠粶渚濊禆**锛氫笉闇€瑕佺炕璇?API Key锛孋I/CD 鍙互璺戝叏娴佺▼娴嬭瘯銆?2. **鍩哄噯瀵规瘮**锛氭棩鍚庝紭鍖栫炕璇戝紩鎿庢椂锛屽彲浠ョ敤 Mock 鐨勭炕璇戠粨鏋滀綔涓哄熀鍑嗘潵璇勪及鏂板紩鎿庤川閲忋€?3. **绂荤嚎鍏滃簳**锛氬鏋滅敤鎴锋病鏈夐厤缃炕璇?API锛岃嚦灏戣兘鐪嬪埌涓€涓兘鐢ㄧ殑缈昏瘧缁撴灉锛岃€屼笉鏄┖鐧姐€?
-鐧惧害鏂囨湰缈昏瘧 API 姣忔湀鍏嶈垂 50 涓囧瓧绗︼紝寤惰繜閫氬父 < 200ms锛屾槸鍚屼紶鍦烘櫙涓嬪吋椤?*閫熷害銆佹垚鏈€佽川閲?*鐨勬渶浣冲浗鍐呮柟妗堛€?
-**涓庤璁℃枃妗ｇ殑鍙樻洿**锛?
-鍘熻璁′娇鐢?OpenAI GPT-4o-mini 浣滀负 LLM 缈昏瘧寮曟搸锛屽疄闄呭紑鍙戜腑鍩轰簬浠ヤ笅鑰冮噺鍒囨崲涓虹櫨搴︾炕璇?API锛?1. **鐢ㄦ埛鎰忓浘**锛氫紭鍏堝浗鍐?AI锛屼笉浣跨敤 OpenAI
-2. **鎴愭湰**锛氱櫨搴︽瘡鏈?50 涓囧瓧绗﹀厤璐归搴?vs OpenAI 鎸?token 璁¤垂
-3. **閫熷害**锛氱櫨搴︿笓鐢ㄧ炕璇?API 寤惰繜 < 200ms vs LLM 閫氱敤鎺ㄧ悊 > 1s
-4. **澶嶇敤**锛氬凡鏈夌櫨搴?API Key 鍜?Secret Key锛岄浂棰濆娉ㄥ唽鎴愭湰
+**关键文件**：
+- `src/services/AudioCapture.ts` — 音频采集 + PCM 输出
+- `src/services/SpeechRecognitionService.ts` — 百度 ASR 客户端 + 断句引擎
+- `src/hooks/useSpeechRecognition.ts` — React Hook 状态管理
+- `vite.config.ts` — 中间件代理（`/api/baidu-token` + `/api/baidu-asr`）
 
-**璁捐鍐崇瓥**锛?- **缈昏瘧鍜岃瘑鍒殑鏁版嵁娴佷负浠€涔堝畬鍏ㄨВ鑰︼紵** `TranslationService.translate(text)` 鏄竴涓函寮傛鍑芥暟锛岃緭鍏ヨ嫳鏂囨枃鏈紝杈撳嚭涓枃瀛楃涓层€傚畠涓?AudioCapture銆丼peechRecognitionService 娌℃湁浠讳綍鐩存帴渚濊禆銆傛湭鏉ユ浛鎹㈢炕璇戝紩鎿庡彧闇€淇敼涓€涓枃浠躲€?- **涓轰粈涔堢炕璇戠瓥鐣ラ厤缃寲锛?* `TranslationConfig.strategy` 鏋氫妇锛坄mock | baidu`锛夐€氳繃鐜鍙橀噺 `VITE_TRANSLATION_STRATEGY` 娉ㄥ叆锛屼笉鍦ㄤ唬鐮佷腑纭紪鐮併€?- **澧為噺缈昏瘧 vs 鍏ㄩ噺缈昏瘧**锛氱洰鍓嶈璁℃槸"姣忓彞鐙珛缈昏瘧"锛坰tateless锛夛紝涓嶅仛涓婁笅鏂囨劅鐭ャ€侾R7 鐨勪笂涓嬫枃淇浼氬湪姝ゅ熀纭€涓婂彔鍔犱慨姝ｉ€昏緫銆?
-**瀹炵幇鎬濊矾**锛?- **TranslationService 鎺ュ彛**锛歚translate(text: string): Promise<string>`锛屽畾涔変簬 `types.ts`
-- **MockTranslationService**锛氬唴缃?280+ 甯哥敤鑻辨枃璇嶆眹/鐭/鍙ュ瀷 鈫?涓枃鏄犲皠琛?  - 鍩虹璇嶆眹鏄犲皠锛歚hello 鈫?浣犲ソ`銆乣thank you 鈫?璋㈣阿`銆乣good morning 鈫?鏃╀笂濂絗
-  - 绠€鍗曞彞鍨嬫ā鏉垮尮閰嶏細`I think 鈫?鎴戣涓篳銆乣I want to 鈫?鎴戞兂`銆乣in order to 鈫?涓轰簡`
-  - 璐┆鏈€闀垮瓙涓插尮閰嶇畻娉曪細浼樺厛鍖归厤闀跨煭璇紝鍐嶉€愯瘝缈昏瘧鏈尮閰嶉儴鍒?  - 鏈尮閰嶈瘝姹囨爣璁颁负 `[鏈炕璇慮`
-- **BaiduTranslationService**锛氬鎺ョ櫨搴﹂€氱敤鏂囨湰缈昏瘧 REST API锛坄fanyi-api.baidu.com`锛?  - Vite 涓棿浠?`/api/baidu-translate` 鏈嶅姟绔唬鐞嗭紝MD5 绛惧悕璁よ瘉锛坅ppid + q + salt + secretKey锛?  - 澶嶇敤宸叉湁鐨?`BAIDU_SECRET_KEY`锛屾柊澧?`BAIDU_APP_ID` 閰嶇疆椤?  - 瀹屾暣閿欒澶勭悊鍜岄檷绾х瓥鐣ワ細璇锋眰澶辫触 鈫?杩斿洖鍘熸枃 + `[缈昏瘧澶辫触]` 鏍囪
-- **TranslationService 宸ュ巶 + LRU 缂撳瓨**锛?  - `TranslationConfig` 缁熶竴绠＄悊绛栫暐鍒囨崲锛坄mock` | `baidu`锛?  - `createService(config)` 宸ュ巶鍑芥暟锛岃繑鍥炲甫缂撳瓨鐨?TranslationService 瀹炰緥
-  - LRU 缂撳瓨瀹归噺 500 鏉★紝缂撳瓨閿负鍘熸枃鐨勫皬鍐欏綊涓€鍖栧舰寮忥紙鍘绘爣鐐广€佸幓澶氫綑绌烘牸锛?  - 鍙屽悜閾捐〃瀹炵幇 O(1) 娣樻卑鍜屾洿鏂?- **PunctuationService**锛氳鍒欐爣鐐瑰紩鎿庯紝涓虹櫨搴?ASR 杩斿洖鐨勭函鏂囨湰琛ュ叏鏍囩偣绗﹀彿
-  - 缂╃暐璇嶄慨澶嶏紙`im 鈫?I'm`銆乣dont 鈫?don't`锛?  - 澶у皬鍐欎慨姝ｏ紙`i 鈫?I`锛?  - 鏈熬鏍囩偣鑷姩琛ュ叏锛堥棶鍙?鍙ュ彿锛?  - 閫楀彿鎻掑叆锛堥暱骞跺垪鍙ヨ嚜鍔ㄦ坊鍔犻€楀彿锛?
-**鍏抽敭鏂囦欢**锛?- `src/services/TranslationService.ts` 鈥?缈昏瘧宸ュ巶 + LRU 缂撳瓨
-- `src/services/MockTranslationService.ts` 鈥?鏈湴璇嶅吀缈昏瘧锛?80+ 鏉＄洰锛?- `src/services/BaiduTranslationService.ts` 鈥?鐧惧害缈昏瘧 API 瀹㈡埛绔?- `src/services/PunctuationService.ts` 鈥?鏍囩偣琛ュ叏寮曟搸
-- `vite.config.ts` 鈥?鏂板 `/api/baidu-translate` 涓棿浠?- `src/hooks/useSpeechRecognition.ts` 鈥?鎵╁睍涓鸿緭鍑?`SubtitleItem[]`
-- `src/App.tsx` 鈥?鍙岃瀛楀箷鍗＄墖 UI
-- `.env.example` 鈥?鏂板 `BAIDU_APP_ID`銆乣VITE_TRANSLATION_STRATEGY`
-
-**楠屾敹鏍囧噯**锛?- Mock 妯″紡涓?`"Hello"` 鈫?`"浣犲ソ"`锛宍"Thank you very much"` 鈫?鍙涓枃
-- 鐧惧害妯″紡涓嬩换鎰忚嫳鏂囧彞 鈫?閫氶『涓枃锛屽欢杩?< 2 绉?- 鐩稿悓鍘熸枃涓嶉噸澶嶈姹傜櫨搴?API锛堝懡涓?LRU 缂撳瓨锛?- Mock 妯″紡涓嬭鐩?280+ 涓父鐢ㄨ瘝 + 鍙ュ瀷妯℃澘
-- 杩炵画璇磋瘽鏃剁炕璇戜笉闃诲銆佷笉涔卞簭
-- `VITE_TRANSLATION_STRATEGY` 鐜鍙橀噺鍒囨崲绛栫暐鍗虫椂鐢熸晥
-### PR4锛氬瓧骞曠姸鎬佺鐞?+ 鏍囪鍔熻兘 鉁?
-**鐩爣**锛氱鐞嗗瓧骞曠敓鍛藉懆鏈燂紝鏀寔鏍囪閲嶇偣銆佷慨姝ｈ瘧鏂囥€?
-**涓轰粈涔堥渶瑕佷笓闂ㄧ殑瀛楀箷鐘舵€佺鐞嗭紵**
-
-鐩磋涓婏紝瀛楀箷鍙槸涓€涓?`string[]`锛岀敤 `useState` 灏卞浜嗐€備絾瀹為檯涓婏紝姣忔潯瀛楀箷鏈?7 涓姸鎬佺淮搴︼細`id`锛堝敮涓€鏍囪瘑锛夈€乣sourceText`锛堣嫳鏂囧師鏂囷級銆乣translatedText`锛堜腑鏂囪瘧鏂囷級銆乣timestamp`锛堟椂闂存埑锛夈€乣marked`锛堢敤鎴锋爣璁帮級銆乣version`锛堜慨姝ｆ鏁帮級銆乣status`锛坕nterim/final锛夈€傝繖浜涚淮搴﹀郊姝ょ嫭绔嬪彉鍖栤€斺€旀爣璁颁笉褰卞搷璇戞枃銆佷慨姝ｄ笉褰卞搷鍘熸枃銆佹椂闂存埑姘歌繙涓嶅彉鈥斺€旂敤绠€鍗曠殑 `useState` 绠＄悊浼氬鑷翠笉蹇呰鐨勬暣鏁扮粍閲嶆覆鏌撱€?
-`useReducer` + `SubtitleContext` 鐨勫垎灞傝璁★細
-- **`useReducer`** 澶勭悊鍘熷瓙鐘舵€佸彉鏇达紝姣忎釜 action锛坄add`銆乣correct`銆乣toggleMark`銆乣clear`锛夊彧淇敼蹇呰鐨勫瓧娈碉紝涓嶈Е鍙戝叾浠栨潯鐩殑 re-render
-- **`SubtitleContext`** 灏嗗瓧骞曠姸鎬佸箍鎾粰鎵€鏈夋秷璐硅€咃紙鎮诞绐?UI銆佸鍑烘湇鍔°€乀TS 闃熷垪锛夛紝閬垮厤 props drilling
-
-**鏍囪鍔熻兘鐨勪环鍊?*锛氱敤鎴峰湪鐪嬫紨璁叉椂鏍囪鍏抽敭鍙ワ紝浜嬪悗瀵煎嚭鏃惰繖浜涙爣璁板彞浼氭湁鏄熸爣鍓嶇紑鍜岀矖浣撴牱寮忋€傝繖鏄?浠庝俊鎭秷璐瑰埌淇℃伅鏁寸悊"鐨勮浆鎶樼偣鈥斺€旀爣璁拌瀛楀箷浠?鐪嬭繃鍗冲繕"鍙樻垚"閲嶇偣绗旇"銆?
-**璁捐鍐崇瓥**锛?- **涓轰粈涔堟槸 `useReducer` 鑰屼笉鏄?`zustand` 鎴?`jotai`锛?* 淇濇寔闆跺閮ㄤ緷璧栥€俙useReducer` 鏄?React 鍐呯疆鑳藉姏锛屽浜?4 涓?action 绫诲瀷 + 500 鏉′笂闄愮殑鍦烘櫙瀹屽叏澶熺敤銆傚鏋滄湭鏉ラ渶瑕佷腑闂翠欢锛堟寔涔呭寲鍒?IndexedDB锛夛紝鍐嶈縼绉诲埌澶栭儴鐘舵€佸簱涔熶笉杩熴€?- **涓轰粈涔堝瓧骞曚笂闄愭槸 500 鏉★紵** 500 鏉?脳 ~200 瀛楃/鏉?= 100KB 鍐呭瓨锛岃繖瀵规祻瑙堝櫒鏉ヨ鍙互蹇界暐涓嶈銆備絾 500 鏉¤鐩栦簡绾?30 鍒嗛挓鐨勮繛缁紨璁诧紙鍋囪姣?3-4 绉掍竴鍙ワ級锛屽疄闄呬娇鐢ㄥ満鏅腑鏋佸皯瓒呭嚭銆傝秴杩囦笂闄愭椂鍒犻櫎鏈€鏃╂潯鐩€岄潪鎷掔粷鏂板鈥斺€斿畞鍙涪澶卞巻鍙诧紝涔熶笉鑳介樆濉炴柊鍐呭銆?- **涓轰粈涔堟爣璁板拰淇鏄袱涓嫭绔嬫搷浣滐紵** 鏍囪鏄敤鎴蜂富鍔ㄨ涓猴紙"杩欏彞璇濆緢閲嶈"锛夛紝淇鏄郴缁熻嚜鍔ㄨ涓猴紙"鍓嶉潰缈婚敊浜?锛夈€傚畠浠殑瑙﹀彂婧愪笉鍚岋紝UI 琛ㄧ幇涔熶笉鍚岋紙鏍囪鏄潤鎬佹槦鏍囷紝淇鏄棯鐑侀珮浜級锛屼笉搴旀贩鍦ㄤ竴璧枫€?
-**瀹炵幇鎬濊矾**锛?- 姣忔潯瀛楀箷鍒嗛厤鍞竴 `id`锛圲UID锛夛紝鎼哄甫 `sourceText`锛堣嫳鏂囷級銆乣translatedText`锛堜腑鏂囷級銆乣timestamp`銆乣marked`锛堟爣璁扮姸鎬侊級銆乣version`锛堜慨姝ｆ鏁帮級
-- `useSubtitleManager` Hook 缁存姢 `SubtitleItem[]` 鏁扮粍锛屾彁渚?4 涓師瀛愭搷浣滐細
-  - `addSubtitle` 鈥?杩藉姞鏂板瓧骞曪紝甯︽贰鍏ュ姩鐢昏Е鍙戞爣璁?  - `correctSubtitle` 鈥?鏍规嵁 `id` 鏇存柊璇戞枃瀛楁锛岄€掑 `version`锛岃Е鍙戦珮浜棯鐑?  - `toggleMark` 鈥?鍒囨崲 `marked` 甯冨皵鍊硷紝涓嶅奖鍝嶅姩鐢?  - `clearSubtitles` 鈥?娓呯┖鍏ㄩ儴瀛楀箷锛屽彂閫佸墠纭
-- 鍐呴儴浣跨敤 `useReducer` 绠＄悊鐘舵€侊紝姣忔鎿嶄綔杩斿洖鍙樻洿浜嬩欢鍒楄〃渚?UI 娑堣垂
-- **鏍囪鍔熻兘**锛氱敤鎴峰湪鎮诞绐椾腑鐐瑰嚮鏌愭潯瀛楀箷鍗虫爣璁颁负閲嶇偣锛屾爣璁板彞鍦ㄥ鍑烘椂楂樹寒鏄剧ず
-- 瀛楀箷涓婇檺淇濇姢锛氳秴杩?500 鏉¤嚜鍔ㄦ竻鐞嗘渶鏃╂潯鐩紝闃叉鍐呭瓨娉勬紡
-
-**鍏抽敭鏂囦欢**锛?- `src/hooks/useSubtitleManager.ts` 鈥?瀛楀箷鐘舵€佹満
-- `src/context/SubtitleContext.tsx` 鈥?鍏ㄥ眬瀛楀箷涓婁笅鏂囷紙璺ㄧ粍浠跺叡浜級
-- `src/types.ts` 鈥?SubtitleItem / SubtitleAction 绫诲瀷
-
-**楠屾敹鏍囧噯**锛?- 閫氳繃 `addSubtitle` 娣诲姞鐨勫瓧骞曟纭拷鍔犲埌鏁扮粍鏈熬
-- `correctSubtitle` 浠呬慨鏀规寚瀹?id 鐨勫瓧骞曪紝涓嶈Е鍙婂叾浠栨潯鐩?- `toggleMark` 鍒囨崲 `marked` 瀛楁锛屼笉浜х敓閲嶅鏉＄洰
-- 500 鏉′笂闄愯Е鍙戞椂锛屾渶鏃╂潯鐩姝ｇ‘绉婚櫎
+**验收标准**：
+- 点击「开始监听」→ 允许麦克风 → 状态显示「监听中」
+- 说英文 → 1-3 秒内在页面看到识别文本
+- 停顿 ~1 秒自动分句，显示为独立字幕条目
+- 点击「停止监听」→ 麦克风释放，状态回到「待命」
 
 ---
 
-### PR5锛氬姩鎬佸瓧骞?UI + 鎮诞绐楄璁?猬?
-**鐩爣**锛氬疄鐜板彲娴姩鐨勫瓧骞曟樉绀虹獥鍙ｏ紝鏀寔鍔ㄧ敾銆佷氦浜掑拰瑙嗚瀹氬埗銆?
-**涓轰粈涔堟偓娴獥鏄繖涓骇鍝佺殑"鐏甸瓊"锛?*
+### PR3：翻译服务接入 ✅
 
-鍚屽０浼犺瘧鍔╂墜鐨勬牳蹇冧娇鐢ㄥ満鏅槸锛氱敤鎴锋鍦ㄦ祻瑙堝櫒閲岀湅涓€涓嫳鏂囪棰戞垨鍦ㄧ嚎浼氳锛屽悓鏃堕渶瑕佺湅鍒板疄鏃跺瓧骞曘€傚鏋滃瓧骞曞祵鍦ㄩ〉闈㈠唴鐨勬煇涓浐瀹氬尯鍩燂紝鐢ㄦ埛鍙兘鍦ㄨ繖涓爣绛鹃〉閲岀湅鍒板瓧骞曗€斺€斿垏鎹㈡爣绛鹃〉灏变涪澶变簡銆?*鎮诞绐楃殑鏈川鏄瀛楀箷浠?椤甸潰鍐?鎻愬崌鍒?娴忚鍣ㄤ箣涓?**锛岃瀛楀箷鎴愪负鐙珛浜庝换浣曠綉椤靛唴瀹圭殑鍙犲姞灞傘€?
-杩欎釜璁捐鍙傝€冧簡锛?- **OBS 鐨勫瓧骞曞彔鍔?*锛氱洿鎾伐鍏风殑瀛楀箷灞傜嫭绔嬫偓娴湪瑙嗛涔嬩笂锛岄€忔槑搴﹀彲璋?- **YouTube 鐨勮嚜鍔ㄥ瓧骞?*锛氭柊瀛楀箷浠庡簳閮ㄦ贰鍏ワ紝鏃у瓧骞曞悜涓婃粴鍔?- **Discord 鐨勭敾涓敾**锛氬皬绐楁ā寮忚窡闅忕敤鎴锋祻瑙堬紝涓嶅共鎵颁富鍐呭
+**目标**：将英文识别结果实时翻译为中文，支持 Mock 本地词典和百度文本翻译 API 两种策略。
 
-**鎮诞绐楃殑涓変釜鏍稿績浜や簰妯″紡**锛?
-1. **鍥哄畾妯″紡**锛堥粯璁わ級锛氭偓娴獥鍥哄畾鍦ㄥ睆骞曞彸涓嬭锛屽崐閫忔槑姣涚幓鐠冭儗鏅€傜敤鎴风湅瑙嗛鏃跺瓧骞曞彔鍔犲湪瑙嗛搴曢儴锛屼笉閬尅涓昏鍐呭銆傞€傜敤浜庯細鍏ㄥ睆鐪?YouTube/Bilibili 瑙嗛銆?
-2. **鎷栨嫿妯″紡**锛氱敤鎴锋寜浣忔偓娴獥鏍囬鏍忔嫋鍔ㄥ埌浠绘剰浣嶇疆銆備綅缃褰曞湪 `localStorage`锛屽埛鏂颁笉涓㈠け銆傞€傜敤浜庯細瀛楀箷鎸′綇浜嗚棰戠殑鍏抽敭鎸夐挳锛堝鎾斁/鏆傚仠锛夛紝闇€瑕佹尓寮€銆?
-3. **鏈€灏忓寲妯″紡**锛氱偣鍑绘姌鍙犳寜閽紝鎮诞绐楃缉灏忎负 60脳60px 鐨勫渾褰?logo銆傛偓娴獥鍙樹负"涓嶆墦鎵?鐘舵€侊紝鍙湪鏈夋柊鐨?final 鍙ュ瓙鏃?logo 闂儊鎻愮ず銆傞€傜敤浜庯細鏆傛椂涓嶉渶瑕佸瓧骞曚絾涓嶆兂鍏抽棴鐩戝惉銆?
-**閫忔槑搴﹁璁?*锛?0%-100% 杩炵画鍙皟銆備负浠€涔堜粠 20% 璧疯€屼笉鏄?0%锛熷洜涓?0% 閫忔槑鎰忓懗鐫€瀹屽叏涓嶅彲瑙佲€斺€旂敤鎴峰鏋滆璋冨埌 0% 浼氫互涓哄姛鑳藉潖浜嗐€?0% 鏄渶浣庡彲瑙佸害淇濊瘉銆備负浠€涔堝埌 100% 鑰屼笉鏄洿楂橈紵鎮诞绐椾笉鏄棰戞挱鏀惧櫒锛屼笉闇€瑕佷笉閫忔槑搴?> 1 鐨勫彔鍔犳晥鏋溿€?
-**鍔ㄧ敾璁捐鍘熷垯**锛?- **鍏ュ満鍔ㄧ敾**锛?00ms `ease-out`锛夛細鏂板彞瀛愪粠涓嬫柟 10px + opacity 0 鈫?鍘熶綅缃?+ opacity 1銆?00ms 鏄汉鐪?娉ㄦ剰鍒板彉鍖?鐨勬渶鐭垝閫傛椂闂粹€斺€旀洿鐭細鎰熻绐佸厐锛屾洿闀夸細鎰熻杩熼挐銆?- **淇闂儊**锛?00ms `ease-in-out`锛夛細琚慨姝ｇ殑鍙ュ瓙鑳屾櫙榛勨啋閫忔槑銆?00ms 瓒冲璁╃敤鎴锋敞鎰忓埌"杩欐潯鍙樹簡"锛屼絾涓嶈嚦浜庨暱鏃堕棿鍗犳嵁娉ㄦ剰鍔涖€傝繖鏉″彞瀛愪箣鍓嶇殑鍐呭浼氭湁涓€涓煭鏆傜殑鑳屾櫙楂樹寒锛堢害 500ms 骞堕€愭笎娑堝け锛夈€?- **鎶樺彔/灞曞紑**锛?00ms `ease-in-out`锛夛細绐楀彛缂╂斁鍔ㄧ敾銆?00ms 骞宠　浜嗚瑙夎繛缁€у拰鎿嶄綔鍝嶅簲閫熷害銆?
-**鏍囪鐨勮瑙夎璁?*锛?- 鐢ㄦ埛鐨?marking锛堟槦鏍?楂樹寒锛夋搷浣滀細瑙﹀彂绠€鍗曠殑鍔ㄧ敾鍙嶉銆俶arked 鏉＄洰宸︿晶鍑虹幇 鈽?鏄熸爣锛坄text-yellow-400`锛夛紝鍚屾椂鏉＄洰鑳屾櫙浼氭湁涓€娆＄煭鏆傜殑楂樹寒闂儊纭鎿嶄綔宸茶鎺ユ敹銆?
-**鑷姩婊氬姩鐨?鏅鸿兘鏆傚仠"鏈哄埗**锛氳繖鏄偓娴獥浣撻獙鐨勫叧閿粏鑺傗€斺€斿綋鐢ㄦ埛姝ｅ湪鍥炵湅涔嬪墠鐨勫瓧骞曟椂锛屾柊瀛楀箷涓嶅簲璇?鎶㈣蛋"婊氬姩浣嶇疆銆傚疄鐜伴€昏緫锛氭娴?`scrollTop` 璺濈 `scrollHeight` 鐨勫樊鍊?> 50px 鈫?鏆傚仠鑷姩婊氬姩 鈫?鏄剧ず"鈫?鍥炲埌搴曢儴"娴姩鎸夐挳 鈫?鐢ㄦ埛鐐瑰嚮鎸夐挳鎴栨墜鍔ㄦ粴鍥炲簳閮?鈫?鎭㈠鑷姩婊氬姩銆?
-**瀹炵幇鎬濊矾**锛?- **鎮诞绐楀鍣?*锛?  - 浣跨敤缁濆瀹氫綅 + z-index 娴簬椤甸潰/瑙嗛涓婃柟
-  - `position: fixed; bottom: 80px; right: 20px; width: 360px; max-height: 60vh`
-  - 鍗婇€忔槑鑳屾櫙 `bg-black/70 backdrop-blur` 瀹炵幇姣涚幓鐠冩晥鏋?  - 鏀寔榧犳爣鎷栨嫿绉诲姩浣嶇疆锛堣褰?`translateX/Y` offset锛?  - 鎻愪緵閫忔槑搴︽粦鍧楋紙20%-100%锛夊疄鏃惰皟鑺?  - 鎮诞绐楀彲鎶樺彔涓烘渶灏忓寲鍥炬爣锛堝彸涓嬭 logo 60x60px锛夛紝鐐瑰嚮灞曞紑
-- **瀛楀箷鍒楄〃娓叉煋**锛?  - 浣跨敤 `VirtualList` 鎶€鏈紙鎴?`overflow-y: auto` + `scroll-behavior: smooth`锛?  - 鏂板瓧骞曚粠搴曢儴娣″叆锛坄opacity 0鈫?` + `translateY 10px鈫?`锛?00ms transition锛?  - 瀹屾暣鍙ラ粦鑹插瓧浣擄紝杩涜涓彞瀛愮伆鑹叉枩浣擄紙`text-slate-500 italic`锛?  - 淇瀛楀箷楂樹寒闂儊锛氶粍鑹茶儗鏅?`bg-yellow-100` 鈫?娓愰殣锛?00ms 鍔ㄧ敾
-  - 鏍囪閲嶇偣鐨勫瓧骞曞乏渚ф樉绀烘槦鏍?鈽?- **鑷姩婊氬姩琛屼负**锛?  - 姣忔鏂板瓧骞曞嚭鐜帮紝鑷姩 `scrollTop = scrollHeight`
-  - 妫€娴嬬敤鎴锋槸鍚︽墜鍔ㄦ粴绂诲簳閮紙璺濈 > 50px锛夛紝鏄垯鏆傚仠鑷姩婊氬姩
-  - 妫€娴嬬敤鎴锋槸鍚︽粴鍥炲簳閮紝鏄垯鎭㈠鑷姩婊氬姩
-  - 鐢ㄦ埛鎵嬪姩婊氬姩鏈熼棿鏄剧ず"鈫?鍥炲埌搴曢儴"娴姩鎸夐挳
-- **鍝嶅簲寮忛€傞厤**锛?  - 妗岄潰绔細鎮诞绐楀 360px锛屽彸渚у浐瀹?  - 骞虫澘绔細瀹?300px锛屽彸渚у浐瀹?  - 绉诲姩绔細鎮诞绐楀垏鎹负搴曢儴妯潯锛屽崰灞忓箷瀹?100%锛岄珮搴?120px
+**为什么放在 PR3？**
 
-**鍏抽敭鏂囦欢**锛?- `src/components/FloatingWindow.tsx` 鈥?鎮诞绐楀鍣紙鎷栨嫿銆佹姌鍙犮€侀€忔槑搴︼級
-- `src/components/SubtitleList.tsx` 鈥?瀛楀箷鍒楄〃锛堟粴鍔ㄣ€佸姩鐢伙級
-- `src/components/SubtitleItem.tsx` 鈥?鍗曟潯瀛楀箷娓叉煋锛堟爣璁般€佷慨姝ｅ姩鐢汇€佸崟璇嶇偣鍑伙級
-- `src/components/WordPopover.tsx` 鈥?鍗曡瘝閲婁箟寮圭獥缁勪欢
-- `src/services/MockTranslationService.ts` 鈥?瀵煎嚭璇嶅吀 + `lookupWord` 闈欐€佹柟娉?- `src/hooks/useAutoScroll.ts` 鈥?鑷姩婊氬姩閫昏緫
-- `src/hooks/useDrag.ts` 鈥?鎷栨嫿 Hook
+PR2 完成了"听懂英文"，PR3 要实现"翻译成中文"——这是产品从"英文转写工具"到"同声传译助手"的关键一步。PR3 独立于 PR2 的音频链路，二者通过 `useSpeechRecognition` 暴露的 `completedSentences` 接口解耦。
 
-**楠屾敹鏍囧噯**锛?- 鎮诞绐楀彲鎷栨嫿绉诲姩锛屽埛鏂伴〉闈綅缃笉涓㈠け锛堝瓨 localStorage锛?- 閫忔槑搴﹁皟鑺傚嵆鏃剁敓鏁?- 鎶樺彔/灞曞紑鍔ㄧ敾娴佺晠锛?00ms锛?- 鏂板瓧骞曟贰鍏ャ€佷慨姝ｉ珮浜棯鐑佸姩鐢讳笉鍗￠】
-- 鐐瑰嚮鑻辨枃鍗曡瘝寮瑰嚭姘旀场鏄剧ず涓枃閲婁箟锛屽脊绐楀畾浣嶅湪鍗曡瘝闄勮繎
-- 鐐瑰嚮寮圭獥澶栨垨鎸?Escape 鍏抽棴寮圭獥锛岀偣鍑诲彟涓€涓崟璇嶅垏鎹㈠脊绐楀唴瀹?- MockTranslationService 瀵煎嚭鐨?`lookupWord` 鏂规硶姝ｇ‘杩斿洖閲婁箟鎴?null
-- 鎵嬪姩婊氬姩鏃朵笉鑷姩璺冲簳锛屾粴鍥炲簳閮ㄦ椂鎭㈠
-- 绉诲姩绔竷灞€姝ｅ父鍒囨崲鍒版í鏉℃ā寮?
+**为什么留两个翻译策略（Mock + 百度 API）？**
+
+这不是过度设计。Mock 模式（本地词典映射）的价值在于：
+1. **开发无网络依赖**：不需要翻译 API Key，CI/CD 可以跑全流程测试。
+2. **基准对比**：日后优化翻译引擎时，可以用 Mock 的翻译结果作为基准来评估新引擎质量。
+3. **离线兜底**：如果用户没有配置翻译 API，至少能看到一个能用的翻译结果，而不是空白。
+
+百度文本翻译 API 每月免费 50 万字符，延迟通常 < 200ms，是同传场景下兼顾**速度、成本、质量**的最佳国内方案。
+
+**与设计文档的变更**：
+
+原设计使用 OpenAI GPT-4o-mini 作为 LLM 翻译引擎，实际开发中基于以下考量切换为百度翻译 API：
+1. **用户意图**：优先国内 AI，不使用 OpenAI
+2. **成本**：百度每月 50 万字符免费额度 vs OpenAI 按 token 计费
+3. **速度**：百度专用翻译 API 延迟 < 200ms vs LLM 通用推理 > 1s
+4. **复用**：已有百度 API Key 和 Secret Key，零额外注册成本
+
+**设计决策**：
+- **翻译和识别的数据流为什么完全解耦？** `TranslationService.translate(text)` 是一个纯异步函数，输入英文文本，输出中文字符串。它与 AudioCapture、SpeechRecognitionService 没有任何直接依赖。未来替换翻译引擎只需修改一个文件。
+- **为什么翻译策略配置化？** `TranslationConfig.strategy` 枚举（`mock | baidu`）通过环境变量 `VITE_TRANSLATION_STRATEGY` 注入，不在代码中硬编码。
+- **增量翻译 vs 全量翻译**：目前设计是"每句独立翻译"（stateless），不做上下文感知。PR7 的上下文修正会在此基础上叠加修正逻辑。
+
+**实现思路**：
+- **TranslationService 接口**：`translate(text: string): Promise<string>`，定义于 `types.ts`
+- **MockTranslationService**：内置 280+ 常用英文词汇/短语/句型 → 中文映射表
+  - 基础词汇映射：`hello → 你好`、`thank you → 谢谢`、`good morning → 早上好`
+  - 简单句型模板匹配：`I think → 我认为`、`I want to → 我想`、`in order to → 为了`
+  - 贪婪最长子串匹配算法：优先匹配长短语，再逐词翻译未匹配部分
+  - 未匹配词汇标记为 `[未翻译]`
+- **BaiduTranslationService**：对接百度通用文本翻译 REST API（`fanyi-api.baidu.com`）
+  - Vite 中间件 `/api/baidu-translate` 服务端代理，MD5 签名认证（appid + q + salt + secretKey）
+  - 复用已有的 `BAIDU_SECRET_KEY`，新增 `BAIDU_APP_ID` 配置项
+  - 完整错误处理和降级策略：请求失败 → 返回原文 + `[翻译失败]` 标记
+- **TranslationService 工厂 + LRU 缓存**：
+  - `TranslationConfig` 统一管理策略切换（`mock` | `baidu`）
+  - `createService(config)` 工厂函数，返回带缓存的 TranslationService 实例
+  - LRU 缓存容量 500 条，缓存键为原文的小写归一化形式（去标点、去多余空格）
+  - 双向链表实现 O(1) 淘汰和更新
+- **PunctuationService**：规则标点引擎，为百度 ASR 返回的纯文本补全标点符号
+  - 缩略词修复（`im → I'm`、`dont → don't`）
+  - 大小写修正（`i → I`）
+  - 末尾标点自动补全（问号/句号）
+  - 逗号插入（长并列句自动添加逗号）
+
+**关键文件**：
+- `src/services/TranslationService.ts` — 翻译工厂 + LRU 缓存
+- `src/services/MockTranslationService.ts` — 本地词典翻译（280+ 条目）
+- `src/services/BaiduTranslationService.ts` — 百度翻译 API 客户端
+- `src/services/PunctuationService.ts` — 标点补全引擎
+- `vite.config.ts` — 新增 `/api/baidu-translate` 中间件
+- `src/hooks/useSpeechRecognition.ts` — 扩展为输出 `SubtitleItem[]`
+- `src/App.tsx` — 双语字幕卡片 UI
+- `.env.example` — 新增 `BAIDU_APP_ID`、`VITE_TRANSLATION_STRATEGY`
+
+**验收标准**：
+- Mock 模式下 `"Hello"` → `"你好"`，`"Thank you very much"` → 可读中文
+- 百度模式下任意英文句 → 通顺中文，延迟 < 2 秒
+- 相同原文不重复请求百度 API（命中 LRU 缓存）
+- Mock 模式下覆盖 280+ 个常用词 + 句型模板
+- 连续说话时翻译不阻塞、不乱序
+- `VITE_TRANSLATION_STRATEGY` 环境变量切换策略即时生效
+### PR4：字幕状态管理 + 标记功能 ✅
+
+**目标**：管理字幕生命周期，支持标记重点、修正译文。
+
+**为什么需要专门的字幕状态管理？**
+
+直觉上，字幕只是一个 `string[]`，用 `useState` 就够了。但实际上，每条字幕有 7 个状态维度：`id`（唯一标识）、`sourceText`（英文原文）、`translatedText`（中文译文）、`timestamp`（时间戳）、`marked`（用户标记）、`version`（修正次数）、`status`（interim/final）。这些维度彼此独立变化——标记不影响译文、修正不影响原文、时间戳永远不变——用简单的 `useState` 管理会导致不必要的整数组重渲染。
+
+`useReducer` + `SubtitleContext` 的分层设计：
+- **`useReducer`** 处理原子状态变更，每个 action（`add`、`correct`、`toggleMark`、`clear`）只修改必要的字段，不触发其他条目的 re-render
+- **`SubtitleContext`** 将字幕状态广播给所有消费者（悬浮窗 UI、导出服务、TTS 队列），避免 props drilling
+
+**标记功能的价值**：用户在看演讲时标记关键句，事后导出时这些标记句会有星标前缀和粗体样式。这是"从信息消费到信息整理"的转折点——标记让字幕从"看过即忘"变成"重点笔记"。
+
+**设计决策**：
+- **为什么是 `useReducer` 而不是 `zustand` 或 `jotai`？** 保持零外部依赖。`useReducer` 是 React 内置能力，对于 4 个 action 类型 + 500 条上限的场景完全够用。如果未来需要中间件（持久化到 IndexedDB），再迁移到外部状态库也不迟。
+- **为什么字幕上限是 500 条？** 500 条 × ~200 字符/条 = 100KB 内存，这对浏览器来说可以忽略不计。但 500 条覆盖了约 30 分钟的连续演讲（假设每 3-4 秒一句），实际使用场景中极少超出。超过上限时删除最早条目而非拒绝新增——宁可丢失历史，也不能阻塞新内容。
+- **为什么标记和修正是两个独立操作？** 标记是用户主动行为（"这句话很重要"），修正是系统自动行为（"前面翻错了"）。它们的触发源不同，UI 表现也不同（标记是静态星标，修正是闪烁高亮），不应混在一起。
+
+**实现思路**：
+- 每条字幕分配唯一 `id`（UUID），携带 `sourceText`（英文）、`translatedText`（中文）、`timestamp`、`marked`（标记状态）、`version`（修正次数）
+- `useSubtitleManager` Hook 维护 `SubtitleItem[]` 数组，提供 4 个原子操作：
+  - `addSubtitle` — 追加新字幕，带淡入动画触发标记
+  - `correctSubtitle` — 根据 `id` 更新译文字段，递增 `version`，触发高亮闪烁
+  - `toggleMark` — 切换 `marked` 布尔值，不影响动画
+  - `clearSubtitles` — 清空全部字幕，发送前确认
+- 内部使用 `useReducer` 管理状态，每次操作返回变更事件列表供 UI 消费
+- **标记功能**：用户在悬浮窗中点击某条字幕即标记为重点，标记句在导出时高亮显示
+- 字幕上限保护：超过 500 条自动清理最早条目，防止内存泄漏
+
+**关键文件**：
+- `src/hooks/useSubtitleManager.ts` — 字幕状态机
+- `src/context/SubtitleContext.tsx` — 全局字幕上下文（跨组件共享）
+- `src/types.ts` — SubtitleItem / SubtitleAction 类型
+
+**验收标准**：
+- 通过 `addSubtitle` 添加的字幕正确追加到数组末尾
+- `correctSubtitle` 仅修改指定 id 的字幕，不触及其他条目
+- `toggleMark` 切换 `marked` 字段，不产生重复条目
+- 500 条上限触发时，最早条目被正确移除
+
 ---
 
-### PR6锛氬瓧骞曟墜鍔ㄧ紪杈?鈥?璁╃敤鎴锋帉鎺ц瘑鍒粨鏋?猬?
-**鐩爣**锛氬厑璁哥敤鎴峰湪鎮诞绐椾腑鐩存帴鐐瑰嚮瀛楀箷鏉＄洰杩涜缂栬緫淇銆?
-**涓轰粈涔堥渶瑕佹墜鍔ㄧ紪杈戯紵**
+### PR5：useDrag Hook — 鼠标拖拽逻辑提取 ⬜
 
-PR2 鐨勮鍒欐爣鐐瑰紩鎿庡拰璇箟鏂彞绛栫暐宸茬粡澶у箙鎻愬崌璇嗗埆璐ㄩ噺锛屼絾浠讳綍 ASR 绯荤粺閮芥棤娉曞仛鍒?100% 鍑嗙‘銆傚湪鐪熷疄婕旂ず鍦烘櫙涓紝鐢ㄦ埛闇€瑕佺簿纭殑瀛楀箷璁板綍鈥斺€斾竴涓敊璇殑鏍囩偣銆佷竴涓紡鎺夌殑鍗曡瘝锛岄兘浼氬奖鍝嶈鎰熴€傛墜鍔ㄧ紪杈戞彁渚涗簡鐩磋銆佸嵆鏃剁殑淇鍏ュ彛銆?
-**瀹炵幇鎬濊矾**锛?- **缂栬緫鍏ュ彛**锛氭偓娴獥涓瘡鏉″瓧骞曟潯鐩敮鎸佺偣鍑昏繘鍏ョ紪杈戞ā寮?  - 鍗曞嚮瀛楀箷鏉＄洰 鈫?鏉＄洰杩涘叆缂栬緫鎬侊紝娓叉煋涓?`<textarea>` 鎴?`contentEditable` 鍖哄潡
-  - 鑷姩鑱氱劍锛屽厜鏍囧畾浣嶅埌鐐瑰嚮浣嶇疆闄勮繎
-  - 缂栬緫鎬佹樉绀恒€屼繚瀛樸€嶅拰銆屽彇娑堛€嶄袱涓搷浣滄寜閽?  - 鐐瑰嚮鏉＄洰澶栧尯鍩熸垨鎸?`Escape` 鈫?鍙栨秷缂栬緫锛屾仮澶嶅師鏂?- **缂栬緫淇濆瓨**锛?  - 鐢ㄦ埛淇敼鍚庣偣鍑汇€屼繚瀛樸€嶆垨鎸?`Enter`锛坄Shift+Enter` 鎹㈣锛?  - 璋冪敤 `SubtitleManager` 鐨?`editSubtitle(id, newSourceText)` 鏂规硶鏇存柊
-  - 鑷姩閲嶆柊瑙﹀彂缈昏瘧锛堣嫢 PR3 缈昏瘧鏈嶅姟宸插惎鐢級锛屾洿鏂拌瘧鏂?  - 淇濈暀棣栨璇嗗埆鍘熸枃锛坄originalSourceText` 瀛楁锛夛紝`editCount` 閫掑
-- **瑙嗚鍙嶉**锛?  - 缂栬緫鎬侊細鏉＄洰杈规鍙樹负钃濊壊铏氱嚎锛坄border-blue-400 border-dashed`锛夛紝鑳屾櫙杞诲井鎻愪寒
-  - 淇濆瓨鎴愬姛锛氭潯鐩煭鏆傞棯鐑佺豢鑹茶儗鏅紙300ms `ease-out`锛?  - 鏇剧粡琚紪杈戣繃鐨勬潯鐩細宸︿晶鏄剧ず 鉁?鍥炬爣锛宧over 鏃?tooltip 鏄剧ず棣栨璇嗗埆鍘熸枃
-- **蹇嵎閿?*锛?  - 鍙屽嚮鏉＄洰 鈫?杩涘叆缂栬緫妯″紡
-  - `Enter` 鈫?淇濆瓨锛宍Escape` 鈫?鍙栨秷
+**目标**：将拖拽交互逻辑抽离为独立 Hook，支持悬浮窗后续集成。
 
-**鍏抽敭鏂囦欢**锛?- `src/components/EditableSubtitleItem.tsx` 鈥?鍙紪杈戝瓧骞曟潯鐩粍浠?- `src/types.ts` 鈥?鏂板 `originalSourceText`銆乣editCount` 瀛楁鍒?`SubtitleItem`
+**为什么独立为一个 PR？**
 
-**楠屾敹鏍囧噯**锛?- 鍗曞嚮瀛楀箷鏉＄洰杩涘叆缂栬緫鎬侊紝鏄剧ず鍘熸枃鍦ㄨ緭鍏ユ涓?- 淇敼鏂囨湰鍚庝繚瀛橈紝鏉＄洰鏄剧ず鏇存柊鍚庣殑鍐呭
-- 鍙栨秷缂栬緫鎭㈠鍘熸枃锛屼笉鍋氫换浣曚慨鏀?- 宸茬紪杈戞潯鐩乏渚ф樉绀?鉁?鏍囪
-- 缂栬緫淇濆瓨鍚庤嚜鍔ㄨЕ鍙戠炕璇戞洿鏂帮紙鑻ョ炕璇戝凡鍚敤锛?
+拖拽是悬浮窗的核心交互之一，逻辑独立且可复用。单独提取为 Hook 便于测试，也避免与 UI 组件耦合。
+
+**实现思路**：
+- 封装 useDrag(ref) Hook，监听 mousedown / mousemove / mouseup 事件
+- 返回 { x, y, isDragging } 状态，记录当前偏移量
+- 支持拖拽边界限制（不超过视口）
+- 拖拽结束后将位置写入 localStorage，key 为 floating-window-position
+- 初始化时从 localStorage 读取上次保存的位置
+
+**关键文件**：
+- src/hooks/useDrag.ts — 拖拽 Hook
+
+**验收标准**：
+- 按住元素可拖拽移动，松开后停在目标位置
+- 位置保存到 localStorage，刷新页面不丢失
+- 不能拖出视口边界
+
 ---
 
-### PR7锛氫笂涓嬫枃淇瑙﹀彂鍣?鈥?璁╃炕璇?浼氬悗鎮? 猬?
-**鐩爣**锛氭娴嬭涔夎浆鎶樿瘝锛岃嚜鍔ㄤ慨姝ｅ墠鏂囪瘧鏂囩殑鍋忓樊銆?
-**涓轰粈涔堥渶瑕?涓婁笅鏂囦慨姝?锛?*
+### PR6：useAutoScroll Hook — 智能滚动逻辑提取 ⬜
 
-浜虹被鍚屼紶璇戝憳鏈変竴涓叧閿兘鍔涳細褰撲粬浠剰璇嗗埌鑷繁鍓嶉潰缈婚敊浜嗭紙鍥犱负鍚埌浜嗚浆鎶樿瘝锛夛紝浼氱珛鍒荤籂姝ｃ€備緥濡傦紝鍚埌 "I thought the answer was A, **but** it's actually B"鈥斺€旇瘧鍛樹細鍦ㄨ鍑?B"鍚庣珛鍒绘妸鍓嶉潰鐨?绛旀鏄?A"淇涓?绛旀涓嶆槸 A锛岃€屾槸 B"銆?
-鏅€氱殑閫愬彞缈昏瘧绯荤粺娌℃湁杩欎釜鑳藉姏鈥斺€旀瘡鍙ヨ瘽鐙珛缈昏瘧锛?but" 鍚庨潰鐨勫唴瀹逛笉浼氬奖鍝嶅墠闈㈢殑璇戞枃銆?*涓婁笅鏂囦慨姝ｇ殑鏈川鏄缈昏瘧绯荤粺妯′豢浜虹被鍚屼紶鐨?鍥炰慨"琛屼负**銆?
-**涓ゅ眰淇绛栫暐鐨勮璁″垵琛?*锛?- **瑙勫垯寮曟搸 v1**锛氭棤闇€澶栭儴 API锛屽搷搴?< 1ms锛岄€傚悎鏄庣‘杞姌璇嶅満鏅紙but/however/actually 绛夛級銆備緥濡傛娴嬪埌 "but"锛岃嚜鍔ㄥ鍓?1-3 鍙ヨ瘧鏂囪拷鍔?浣嗗疄闄呬笂鈥?鍓嶇紑銆?- **LLM 寮曟搸 v2**锛氶渶瑕佽皟鐢?GPT-4o-mini锛屽搷搴?500ms-2s锛岄€傚悎澶嶆潅璇箟杞姌锛堣鍒恒€佸亣璁捐姘斻€佽姝ョ姸璇粠鍙ョ瓑锛夈€俈1 鏄?MVP 鐨勫揩閫熻矾寰勶紝V2 鏄簿鑷村寲鐨勮繙鏈熺洰鏍囥€?
-**璁捐鍐崇瓥**锛?- **涓轰粈涔堜慨姝ｈ寖鍥存槸鍓?1-3 鏉★紵** 璇箟杞姌閫氬父鍥炴函鏈€杩?1-3 鍙ヨ瘽銆傚洖婧お澶氬彲鑳戒慨姝ｄ笉鐩稿叧鐨勫彞瀛愶紝鍥炴函澶皯鍙兘閬楁紡璺ㄥ彞杞姌銆? 鏄熀浜庤嫳鏂囨紨璁茶鏂欏垎鏋愮殑榛勯噾鍊笺€?- **涓轰粈涔堜慨姝ｆ槸澧為噺鏇存柊鑰岄潪鏁翠綋閲嶇畻锛?* 濡傛灉姣忔淇閮介噸鏂扮炕璇戝叏閮ㄥ瓧骞曪紝UI 浼氬墽鐑堥棯鐑侊紝涓?LLM 寮€閿€涓嶅彲鎺с€傚閲忎慨姝ｅ彧鏀?`translatedText` + `version` 瀛楁锛屼笉褰卞搷鍏朵粬鏉＄洰銆?
-**瀹炵幇鎬濊矾**锛?- 瀹氫箟杞姌璇嶅垪琛細`["but", "however", "although", "actually", "in fact", "on the contrary", "instead", "rather", "yet", "nevertheless"]`
-- 姣忔潯鏂板瓧骞曞姞鍏ュ悗锛屾壂鎻忓綋鍓嶅彞鏄惁鍖呭惈杞姌璇?- 鍛戒腑杞姌璇嶆椂锛岀敓鎴?`correctSubtitle` 浜嬩欢鍥炰慨鍓?1-3 鏉″瓧骞?- 淇绛栫暐鍒嗕袱妗ｏ細
-  - **瑙勫垯寮曟搸 v1**锛氬皢鍓嶆枃璇戞枃鐨勮偗瀹?鍚﹀畾鏋佹€у弽杞紙濡?"is" 鈫?"涓嶆槸"銆?will" 鈫?"涓嶄細"锛夛紝骞惰拷鍔?浣嗗疄闄呬笂鈥︹€?绛夎浆鎶樿瘝
-  - **LLM 寮曟搸 v2**锛堟灦鏋勯鐣欙級锛氬皢鍓?N 鏉″瓧骞曠殑鍘熸枃 + 褰撳墠鍙ュ師鏂囦綔涓?prompt 鍙戦€佺粰 GPT-4o-mini锛岃瀹冭緭鍑轰慨姝ｅ悗鐨勮瘧鏂?JSON
-- 淇杩囩▼涓嶉噸鏂版覆鏌撴暣涓垪琛紝鍙洿鏂扮洰鏍囨潯鐩殑 `translatedText` 鍜?`version` 瀛楁
-- 鐗堟湰鍙烽€掑瑙﹀彂 UI 鐨勯珮浜棯鐑佸姩鐢伙紙PR5 宸插疄鐜帮級
+**目标**：将自动滚动行为抽离为独立 Hook，支持智能暂停机制。
 
-**鍏抽敭鏂囦欢**锛?- `src/services/CorrectionTrigger.ts` 鈥?瑙勫垯寮曟搸
-- `src/services/LLMCorrectionService.ts` 鈥?LLM 淇鎺ュ彛锛坴2 棰勭暀锛?- `src/types.ts` 鈥?CorrectionConfig 绫诲瀷
+**为什么独立为一个 PR？**
 
-**楠屾敹鏍囧噯**锛?- 璇?"I think this is correct, but actually it's wrong" 鈫?鍓嶅崐鍙ヨ瘧鏂囪淇
-- 淇涓嶈Е鍙戞暣涓垪琛ㄩ噸鎺掞紝浠呯洰鏍囨潯鐩?UI 鍙樺寲
-- 杩炵画澶氫釜杞姌璇嶆椂锛屾瘡涓Е鍙戠嫭绔嬬殑淇浜嬩欢
-- 淇鐗堟湰鍙锋纭€掑锛坴ersion 1, 2, 3...锛?
+滚动行为与 DOM 结构无关，逻辑纯粹。单独 Hook 可以在 SubtitleList、FloatingWindow 等多处复用。
+
+**实现思路**：
+- 封装 useAutoScroll(containerRef, trigger) Hook
+- 每当 trigger 变化时自动滚动到底部 (scrollTop = scrollHeight)
+- 检测用户手动滚离底部 (scrollHeight - scrollTop - clientHeight > 50px) → 暂停自动滚动
+- 检测用户滚回底部 → 恢复自动滚动
+- 返回 { isPaused, scrollToBottom } 供 UI 消费
+
+**关键文件**：
+- src/hooks/useAutoScroll.ts — 自动滚动 Hook
+
+**验收标准**：
+- 内容增加时自动滚到底部
+- 用户向上滚动 > 50px 后暂停自动滚动
+- 滚回底部后恢复自动滚动
+
 ---
 
-### PR8锛氳闊冲悎鎴愪笌瀵煎嚭 鈥?浠?鐪?鍒?鍚?鐨勯棴鐜?猬?
-**鐩爣**锛歍TS 鏈楄涓枃璇戞枃 + 涓€閿鍑哄畬鏁村瓧骞曘€?
-**瀹炵幇鎬濊矾**锛?- **TTS 鏈嶅姟**锛?  - 灏佽 `window.speechSynthesis` API 鈫?`TtsService` 绫?  - `speak(text: string, rate: number)` 鏂规硶锛宺ate 鍙傛暟 0.5-2.0
-  - 缁存姢鏈楄闃熷垪锛屾柊鍙ュ瓙鍏ラ槦锛屼慨姝ｅ彞锛坴ersion > 0锛変笉鍏ラ槦
-  - 鐢ㄦ埛閫氳繃璁剧疆闈㈡澘寮€鍏?TTS锛岃皟鏁磋閫熸粦鍧?  - 鏆傚仠鐩戝惉鏃惰嚜鍔ㄦ竻绌烘湕璇婚槦鍒?- **瀵煎嚭鏈嶅姟**锛?  - `ExportService` 绫绘彁渚?`exportAs(type: 'txt' | 'markdown' | 'json')` 鏂规硶
-  - TXT 鏍煎紡锛氱函鏂囨湰锛屽甫鏃堕棿鎴宠 `[HH:MM:SS] 鍘熸枃 鈫?璇戞枃`
-  - Markdown 鏍煎紡锛氳〃鏍兼帓鐗堬紝鏍囪閲嶇偣鐨勮鍔?`**绮椾綋**` + 鍓嶇紑 猸?  - JSON 鏍煎紡锛氬畬鏁?`SubtitleItem[]` 鏁扮粍锛岀敤浜庣▼搴忓寲澶勭悊鎴栧瓨妗?  - 瀵煎嚭鏃惰Е鍙戞祻瑙堝櫒涓嬭浇锛坄Blob` + `URL.createObjectURL` + `<a>` click锛?  - 瀵煎嚭鏂囦欢鍚嶈嚜鍔ㄥ寘鍚椂闂存埑锛歚subtitles_2026-06-05_14-30-00.txt`
-- **璁剧疆闈㈡澘 UI**锛?  - 鎮诞绐楀彸涓婅榻胯疆鍥炬爣 鈫?寮瑰嚭璁剧疆闈㈡澘
-  - 閫夐」锛歍TS 寮€鍏炽€佽閫熸粦鍧椼€佸鍑烘牸寮忛€夋嫨銆侀€忔槑搴︽粦鍧?  - 璁剧疆淇濆瓨鍒?`localStorage`锛屽埛鏂伴〉闈笉涓㈠け
+### PR7：SubtitleItem + SubtitleList — 基础渲染与入场动画 ⬜
 
-**鍏抽敭鏂囦欢**锛?- `src/services/TtsService.ts` 鈥?璇煶鍚堟垚
-- `src/services/ExportService.ts` 鈥?瀛楀箷瀵煎嚭
-- `src/components/SettingsPanel.tsx` 鈥?璁剧疆闈㈡澘 UI
-- `src/hooks/useSettings.ts` 鈥?璁剧疆鐘舵€佺鐞嗭紙localStorage锛?
-**楠屾敹鏍囧噯**锛?- TTS 寮€鍚椂锛屾柊鍙ュ瓙鑷姩鏈楄涓枃锛屼慨姝ｅ彞涓嶅彂澹?- 璇€熻皟鑺傚嵆鏃剁敓鏁堬紝涓嶄腑鏂綋鍓嶆湕璇?- TXT/Markdown/JSON 涓夌鏍煎紡鍧囧彲姝ｇ‘瀵煎嚭
-- 瀵煎嚭鏂囦欢涓爣璁伴噸鐐圭殑鍙ュ瓙鏈夋槑鏄惧尯鍒嗭紙绮椾綋/鏄熸爣锛?- 璁剧疆鍒锋柊椤甸潰鍚庝繚鎸?
+**目标**：实现字幕条目的基本渲染组件，支持标记交互和入场动画。
+
+**实现思路**：
+- SubtitleItem 组件：
+  - 渲染单条字幕：英文原文 + 中文译文
+  - 点击条目触发 toggleMark（星标 ★ 切换）
+  - 新条目入场动画：opacity 0→1 + translateY 10px→0，200ms ease-out
+  - 修正版本号显示：version > 0 时在译文旁显示 v{version+1}
+- SubtitleList 组件：
+  - 渲染 SubtitleItem[] 列表
+  - overflow-y: auto + scroll-behavior: smooth
+  - 接入 useAutoScroll Hook
+  - 用户滚离底部时显示「↓ 回到底部」浮动按钮
+  - interim 文本灰色斜体展示
+
+**关键文件**：
+- src/components/SubtitleItem.tsx — 单条字幕渲染
+- src/components/SubtitleList.tsx — 字幕列表容器
+
+**验收标准**：
+- 新字幕从底部淡入，动画流畅不卡顿
+- 点击条目可切换星标标记
+- 手动滚动时不自动跳底，滚回底部时恢复
+- 回到底部按钮功能正常
+
 ---
 
-### PR9锛氶泦鎴愯仈璋冧笌 UI 鎵撶（ 鈥?浠?Demo 鍒颁骇鍝?猬?
-**鐩爣**锛氭墦閫氬叏閾捐矾锛屽鐞嗚竟鐣屾儏鍐碉紝鎵撶（鏈€缁堜綋楠屻€?
-**瀹炵幇鎬濊矾**锛?- **鍏ㄩ摼璺墦閫?*锛氫粠楹﹀厠椋?鈫?ASR 鈫?缈昏瘧 鈫?瀛楀箷绠＄悊 鈫?鎮诞绐?UI 鈫?TTS 鈫?瀵煎嚭鐨勫畬鏁存暟鎹祦涓茶仈
-- **杈圭晫鎯呭喌澶勭悊**锛?  - WebSocket/REST 閲嶈繛鏈哄埗锛氳繛缁?3 娆?API 澶辫触鍚庢殏鍋?5 绉掗噸璇?  - 闀挎椂闂存棤璇煶锛?60 绉掞級锛氭樉绀?绛夊緟璇煶杈撳叆鈥?鎻愮ず
-  - 鏋佸揩璇€燂細鏅鸿兘鏂彞鐨?3 绉掑厹搴曠‘淇濅笉涓㈠唴瀹?  - 绌鸿瘑鍒粨鏋滐紙`err_no` 闈為浂锛夛細闈欓粯蹇界暐锛屼笉鏄剧ず閿欒
-  - 娴忚鍣ㄦ爣绛鹃〉鍒囨崲锛氬垏鍒板悗鍙版椂缁х画閲囬泦闊抽锛坄AudioContext` 淇濇寔娲昏穬锛?- **UI 鎵撶（**锛?  - 娣辫壊涓婚閫傞厤锛歚dark:` Tailwind 鍙橀噺锛屾墍鏈夌粍浠舵敮鎸佹殫鑹叉ā寮?  - 闂磋窛缁熶竴锛氫娇鐢?Tailwind 鐨?spacing scale锛坄p-4`銆乣gap-3` 绛夛級
-  - 鎸夐挳鐘舵€侊細`hover:`銆乣active:`銆乣disabled:` 涓夋€?  - 鍔犺浇鐘舵€侊細楠ㄦ灦灞忥紙Skeleton锛変唬鏇?spinner
-  - 鍔ㄧ敾鏃堕暱缁熶竴锛氬叆鍦?200ms銆佷慨姝?500ms銆佹姌鍙?300ms
-- **鏂囨。琛ュ叏**锛?  - README 娣诲姞瀹為檯杩愯鎴浘锛堟偓娴獥鏁堟灉銆佽瘑鍒粨鏋滐級
-  - 褰曞埗 30 绉掓紨绀?GIF 浣滀负蹇€熼瑙?  - 娣诲姞甯歌闂 FAQ 绔犺妭
+### PR8：WordPopover — 单词释义弹窗 ⬜
 
-**鍏抽敭鏂囦欢**锛?- 鎵€鏈夌幇瀛樻枃浠剁殑璐ㄩ噺鎵撶（
-- `README.md` 鈥?鏂囨。鏇存柊
-- `public/demo.gif` 鈥?婕旂ず鎴浘
+**目标**：点击字幕英文单词弹出气泡显示中文释义。
 
-**楠屾敹鏍囧噯**锛?- 浠庡墠鍒板悗瀹屾暣娴佺▼鏃犻樆鏂紝浠庣偣鍑汇€屽紑濮嬬洃鍚€嶅埌瀵煎嚭瀛楀箷涓€姘斿懙鎴?- 杈圭晫鎯呭喌锛堟棤璇煶/蹇閫?鏂綉锛変笉宕╂簝锛屾湁鍙嬪ソ鎻愮ず
-- 鏆楄壊妯″紡涓嬫墍鏈?UI 鍙
-- README 鍖呭惈瀹屾暣浣跨敤璇存槑鍜屾埅鍥?
+**实现思路**：
+- 在 MockTranslationService 中导出 lookupWord(word) 静态方法
+- WordPopover 组件：
+  - 接收 word 和 anchorRect（弹出位置锚点）
+  - 调用 lookupWord 获取释义
+  - 渲染浮动气泡，定位在单词附近
+  - 点击弹窗外或按 Escape 关闭
+  - 点击另一个单词时切换弹窗内容（不关闭再打开）
+- 在 SubtitleItem 中为英文单词绑定 onClick 事件
+
+**关键文件**：
+- src/components/WordPopover.tsx — 单词释义弹窗
+- src/services/MockTranslationService.ts — 新增 lookupWord 方法
+
+**验收标准**：
+- 点击英文单词弹出气泡显示中文释义
+- 弹窗定位在单词附近，不超出视口
+- Escape 或点弹窗外关闭弹窗
+- 点击另一个单词切换内容
+- 未匹配单词显示「暂无释义」
+
 ---
 
-## 5. 鍏抽敭璁捐鍐崇瓥
+### PR9：FloatingWindow — 拖拽 + 折叠 ⬜
 
-### 5.1 CORS 瑙ｅ喅鏂规
-鎵€鏈夌櫨搴?API 璋冪敤缁熶竴璧?Vite 涓棿浠朵唬鐞嗭紝鏈嶅姟绔棤 CORS 闄愬埗銆?
-### 5.2 Token 绠＄悊
-- OAuth锛歚https://aip.baidubce.com/oauth/2.0/token`
-- 缂撳瓨 30 澶╋紝閬垮厤姣忔璇嗗埆閮介噸鏂拌姹?
-### 5.3 闊抽鏍煎紡
-| 鍙傛暟 | 鍊?|
+**目标**：实现悬浮窗容器的拖拽移动和折叠/展开功能。
+
+**实现思路**：
+- 悬浮窗容器：
+  - position: fixed; bottom: 80px; right: 20px; width: 360px; max-height: 60vh
+  - 半透明毛玻璃背景 bg-black/70 backdrop-blur
+  - 标题栏区域作为拖拽手柄，接入 useDrag Hook
+  - 拖拽位置保存到 localStorage
+- 折叠模式：
+  - 点击折叠按钮，悬浮窗缩小为 60×60px 圆形 logo
+  - 300ms ease-in-out 缩放动画
+  - 有新 final 句子时 logo 闪烁提示
+  - 点击 logo 展开还原
+- 展开模式：内嵌 SubtitleList 组件
+
+**关键文件**：
+- src/components/FloatingWindow.tsx — 悬浮窗容器
+
+**验收标准**：
+- 悬浮窗可拖拽移动，位置刷新不丢失
+- 折叠/展开动画流畅（300ms）
+- 折叠时新字幕触发 logo 闪烁
+
+---
+
+### PR10：FloatingWindow — 透明度 + 响应式适配 ⬜
+
+**目标**：为悬浮窗添加透明度调节和移动端响应式布局。
+
+**实现思路**：
+- 透明度调节：
+  - 滑块控件，范围 20%-100%
+  - 设置保存到 localStorage
+  - 实时应用 CSS opacity 属性
+- 响应式适配：
+  - 桌面端（≥1024px）：宽 360px，固定右下角
+  - 平板端（768-1023px）：宽 300px
+  - 移动端（<768px）：全宽底部横条，高度 120px
+
+**关键文件**：
+- src/components/FloatingWindow.tsx — 添加透明度和响应式
+
+**验收标准**：
+- 透明度即时生效，刷新保持
+- 移动端布局正常切换为底部横条
+- 透明度最低 20%，不出现完全不可见的情况
+
+---
+
+### PR11：字幕手动编辑 ⬜
+
+**目标**：允许用户手动修改识别错误的原文和译文。
+
+**实现思路**：
+- 在 SubtitleItem 中添加编辑按钮（铅笔图标）
+- 点击进入编辑模式：原文和译文变为 input 框
+- 失焦或回车保存编辑，更新 sourceText / translatedText
+- 编辑过的条目边框变为蓝色虚线标记
+- 编辑不触发重新翻译（保留用户修改）
+
+**关键文件**：
+- src/components/SubtitleItem.tsx — 添加编辑功能
+- src/hooks/useSubtitleManager.ts — 新增 editSubtitle action
+
+**验收标准**：
+- 点击编辑按钮进入编辑模式
+- 修改后失焦保存，边框变为蓝色虚线
+- 编辑后条目不触发重新翻译
+
+---
+
+### PR12：TTS 语音合成 ⬜
+
+**目标**：朗读中文译文，实现从听见到看懂再到听到的闭环。
+
+**实现思路**：
+- 封装 window.speechSynthesis API → TtsService 类
+- speak(text, rate) 方法，rate 参数 0.5-2.0
+- 维护朗读队列，新 final 句子入队，修正句（version > 0）不入队
+- 暂停监听时自动清空朗读队列
+
+**关键文件**：
+- src/services/TtsService.ts — 语音合成服务
+
+**验收标准**：
+- 新句子自动朗读中文译文
+- 修正句不触发朗读
+- 停止监听时清空队列
+
+---
+
+### PR13：字幕导出 ⬜
+
+**目标**：支持一键导出完整字幕为 TXT / Markdown / JSON 格式。
+
+**实现思路**：
+- ExportService 类提供 exportAs(type) 方法
+- TXT：纯文本，带时间戳 [HH:MM:SS] 原文 → 译文
+- Markdown：表格排版，标记句加粗体 + ⭐ 前缀
+- JSON：完整 SubtitleItem[] 数组
+- 导出触发浏览器下载（Blob + a 标签 click）
+- 文件名自动含时间戳
+
+**关键文件**：
+- src/services/ExportService.ts — 字幕导出服务
+
+**验收标准**：
+- 三种格式均可正确导出
+- 标记句在导出中有明显区分
+- 文件名含时间戳
+
+---
+
+### PR14：设置面板 ⬜
+
+**目标**：提供统一的设置界面，管理 TTS、导出、透明度等选项。
+
+**实现思路**：
+- 悬浮窗右上角齿轮图标 → 弹出设置面板
+- 选项：TTS 开关、语速滑块、导出格式选择、透明度滑块
+- useSettings Hook 管理状态，通过 localStorage 持久化
+- 刷新页面不丢失设置
+
+**关键文件**：
+- src/components/SettingsPanel.tsx — 设置面板 UI
+- src/hooks/useSettings.ts — 设置状态管理
+
+**验收标准**：
+- 设置面板可正常打开/关闭
+- 所有选项即时生效
+- 刷新页面设置保持
+
+---
+
+### PR15：上下文修正 ⬜
+
+**目标**：根据后续识别结果修正前面的翻译错误。
+
+**实现思路**：
+- 监听转折词（but, however, actually, in fact, I mean）
+- 出现转折词时标记前 N 条句子待修正
+- 将原文+上下文发送给翻译引擎，获取修正译文
+- 更新 translatedText 并递增 version
+- 修正不触发整列表重排
+
+**关键文件**：
+- src/services/CorrectionService.ts — 上下文修正引擎
+- src/types.ts — CorrectionConfig 类型
+
+**验收标准**：
+- 转折词触发修正，前半句译文被修正
+- 修正不触发整个列表重排
+- 版本号正确递增
+
+---
+
+### PR16：集成联调与 UI 打磨 ⬜
+
+**目标**：打通全链路，处理边界情况，打磨最终体验。
+
+**实现思路**：
+- 全链路打通：麦克风 → ASR → 翻译 → 字幕管理 → 悬浮窗 → TTS → 导出的完整数据流
+- 边界情况：断网重连、长时间无语音提示、快语速兜底、空识别静默忽略
+- UI 打磨：暗色模式、间距统一、按钮三态、加载骨架屏、动画时长统一
+- 文档补全：README 添加截图和 FAQ
+
+**关键文件**：
+- 所有现存文件的质量打磨
+- README.md — 文档更新
+
+**验收标准**：
+- 完整流程无阻断
+- 边界情况不崩溃，有友好提示
+- 暗色模式可读
+- README 含完整使用说明
+
+## 5. 关键设计决策
+
+### 5.1 CORS 解决方案
+所有百度 API 调用统一走 Vite 中间件代理，服务端无 CORS 限制。
+
+### 5.2 Token 管理
+- OAuth：`https://aip.baidubce.com/oauth/2.0/token`
+- 缓存 30 天，避免每次识别都重新请求
+
+### 5.3 音频格式
+| 参数 | 值 |
 |------|-----|
-| 鏍煎紡 | PCM 16-bit signed int |
-| 閲囨牱鐜?| `AudioContext.sampleRate`锛堢害 16000Hz锛?|
-| dev_pid | 1737锛堣嫳璇級 |
+| 格式 | PCM 16-bit signed int |
+| 采样率 | `AudioContext.sampleRate`（约 16000Hz） |
+| dev_pid | 1737（英语） |
 
 ---
 
-## 6. 宸茬煡闂
+## 6. 已知问题
 
-| 闂 | 瑙ｅ喅 |
+| 问题 | 解决 |
 |------|------|
-| Sandbox 闃绘柇 Vite 绔彛 | PowerShell 瀹℃壒閫氶亾鍚姩 |
-| PowerShell `@""@` 鍚?`${}` | 鐢?`@''@` 鎴栧瓧绗︿覆鎷兼帴 |
-| 鐧惧害闇€寮€閫氫笁涓湇鍔?| 鐭闊宠瘑鍒?+ 瀹炴椂璇煶璇嗗埆 + 闊抽鏂囦欢杞啓 |
-| 娴忚鍣?CORS | Vite 涓棿浠朵唬鐞?|
+| Sandbox 阻断 Vite 端口 | PowerShell 审批通道启动 |
+| PowerShell `@""@` 吞 `${}` | 用 `@''@` 或字符串拼接 |
+| 百度需开通三个服务 | 短语音识别 + 实时语音识别 + 音频文件转写 |
+| 浏览器 CORS | Vite 中间件代理 |
 
 ---
 
-## 7. 鍚庣画璺嚎
+## 7. 后续路线
 
-| 浼樺厛绾?| 浠诲姟 |
+| 优先级 | 任务 |
 |--------|------|
-| P0 | ~~PR3: 缈昏瘧鏈嶅姟~~ 鉁?|
-| P0 | PR4+PR5: 瀛楀箷绠＄悊 + 鎮诞绐?|
-| P1 | PR6: 瀛楀箷鎵嬪姩缂栬緫 |
-| P1 | PR7: 涓婁笅鏂囦慨姝?|
-| P1 | AudioWorklet 鏇挎崲 ScriptProcessorNode |
-| P2 | PR8: TTS + 瀵煎嚭 |
-| P2 | PR9: 鑱旇皟涓?UI 鎵撶（ |
-| P2 | Vercel 涓€閿儴缃?|
+| P0 | ~~PR1: 项目脚手架~~ ✅ |
+| P0 | ~~PR2: 音频捕获与识别~~ ✅ |
+| P0 | ~~PR3: 翻译服务~~ ✅ |
+| P0 | ~~PR4: 字幕状态管理~~ ✅ |
+| P0 | PR5: useDrag Hook ⬜ |
+| P0 | PR6: useAutoScroll Hook ⬜ |
+| P0 | PR7: SubtitleItem + SubtitleList ⬜ |
+| P0 | PR8: WordPopover ⬜ |
+| P0 | PR9: FloatingWindow 拖拽+折叠 ⬜ |
+| P0 | PR10: FloatingWindow 透明度+响应式 ⬜ |
+| P1 | PR11: 字幕手动编辑 ⬜ |
+| P1 | PR12: TTS 语音合成 ⬜ |
+| P1 | PR13: 字幕导出 ⬜ |
+| P1 | PR14: 设置面板 ⬜ |
+| P1 | PR15: 上下文修正 ⬜ |
+| P2 | PR16: 集成联调与 UI 打磨 ⬜ |
+| P2 | AudioWorklet 替换 ScriptProcessorNode |
+| P2 | Vercel 一键部署 |

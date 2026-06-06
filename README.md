@@ -1,4 +1,4 @@
-# 馃帣锔?AI 鍚屽０浼犺瘧鍔╂墜 (Web Demo)
+﻿# 馃帣锔?AI 鍚屽０浼犺瘧鍔╂墜 (Web Demo)
 
 > 娴忚鍣ㄧ瀹炴椂鑻辨枃璇煶璇嗗埆 + 涓枃缈昏瘧宸ュ叿锛岄€傜敤浜庤鐪嬭嫳鏂囨紨璁层€佹妧鏈垎浜拰鍦ㄧ嚎璇剧▼銆?
 ## 馃彈锔?鏋舵瀯
@@ -74,10 +74,17 @@ src/
 |----|------|------|
 | PR1 | 项目脚手架搭建（React 19 + Vite 8 + Tailwind CSS v4） | ✅ master |
 | PR2 | 音频捕获与语音识别（百度 ASR REST API + 智能断句） | ✅ master |
-| PR3 | 翻译服务接入（Mock 本地词典 + 百度翻译 API + 双语字幕） | ✅ `pr3-translation-service` |
-| PR4 | 字幕状态管理（useReducer 状态机 + SubtitleContext + 标记功能） | ✅ `pr4-subtitle-manager` |
-| PR5 | 动态字幕 UI + 悬浮窗设计 | ⬜ 待开发 |
-| PR6 | 字幕手动编辑 | ⬜ 待开发 |
-| PR7 | 上下文修正 | ⬜ 待开发 |
-| PR8 | 语音合成与导出 | ⬜ 待开发 |
-| PR9 | 集成联调与 UI 打磨 | ⬜ 待开发 |
+| PR3 | 翻译服务接入（Mock 本地词典 + 百度翻译 API + 双语字幕） | ✅ pr3-translation-service |
+| PR4 | 字幕状态管理（useReducer 状态机 + SubtitleContext + 标记功能） | ✅ pr4-subtitle-manager |
+| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ⬜ 待开发 |
+| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ⬜ 待开发 |
+| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ⬜ 待开发 |
+| PR8 | WordPopover — 单词释义弹窗 | ⬜ 待开发 |
+| PR9 | FloatingWindow — 拖拽 + 折叠 | ⬜ 待开发 |
+| PR10 | FloatingWindow — 透明度 + 响应式适配 | ⬜ 待开发 |
+| PR11 | 字幕手动编辑 | ⬜ 待开发 |
+| PR12 | TTS 语音合成 | ⬜ 待开发 |
+| PR13 | 字幕导出 | ⬜ 待开发 |
+| PR14 | 设置面板 | ⬜ 待开发 |
+| PR15 | 上下文修正 | ⬜ 待开发 |
+| PR16 | 集成联调与 UI 打磨 | ⬜ 待开发 |
