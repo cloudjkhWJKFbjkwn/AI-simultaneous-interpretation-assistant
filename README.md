@@ -109,5 +109,5 @@ api/
 | PR10 | FloatingWindow — 桌面歌词风格 + 字体颜色选择 | ✅ codex/pr10-lyrics-style |
 | PR11 | 字幕手动编辑 — inline 编辑 + 自动重译 | ✅ codex/pr11-subtitle-edit |
 | PR12 | 字幕导出（TXT / Markdown / JSON） | ✅ codex/pr12-subtitle-export |
-| PR13 | 上下文修正（根据后文修正前文翻译） | ⬜ 待开发 |
+| PR13 | 上下文修正（根据后文修正前文翻译） | ✅ codex/pr13-context-correction |
 | PR14 | 集成联调与 UI 打磨（全链路 + 边界 + 暗色模式） | ⬜ 待开发 |
