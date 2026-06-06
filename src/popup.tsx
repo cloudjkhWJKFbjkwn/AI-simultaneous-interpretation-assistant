@@ -6,12 +6,40 @@ interface SubWindowItem {
   translatedText: string;
 }
 
+interface ColorScheme {
+  text: string;
+  stroke: string;
+  label: string;
+}
+
+const COLOR_SCHEMES: ColorScheme[] = [
+  { text: "#ffffff", stroke: "rgba(0,0,0,0.9)", label: "白+黑" },
+  { text: "#ffeb3b", stroke: "rgba(0,0,0,0.9)", label: "黄+黑" },
+  { text: "#00e5ff", stroke: "rgba(0,0,0,0.9)", label: "青+黑" },
+  { text: "#76ff03", stroke: "rgba(0,0,0,0.9)", label: "绿+黑" },
+  { text: "#ffffff", stroke: "rgba(30,80,200,0.85)", label: "白+蓝" },
+  { text: "#ffeb3b", stroke: "rgba(200,30,30,0.85)", label: "黄+红" },
+];
+
+function loadSchemeIndex(): number {
+  try {
+    const v = localStorage.getItem("popup-color-scheme");
+    if (v) {
+      const n = Number(v);
+      if (n >= 0 && n < COLOR_SCHEMES.length) return n;
+    }
+  } catch { /* ignore */ }
+  return 0;
+}
+
 export function PopupApp() {
   const [items, setItems] = useState<SubWindowItem[]>([]);
   const [interimText, setInterimText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [prevItem, setPrevItem] = useState<SubWindowItem | null>(null);
+  const [schemeIdx, setSchemeIdx] = useState(loadSchemeIndex);
+  const [showPicker, setShowPicker] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controlChannelRef = useRef<BroadcastChannel | null>(null);
 
@@ -75,14 +103,18 @@ export function PopupApp() {
     };
   }, [isListening]);
 
+  useEffect(() => {
+    try { localStorage.setItem("popup-color-scheme", String(schemeIdx)); } catch { /* ignore */ }
+  }, [schemeIdx]);
+
   const handleToggle = () => {
     if (controlChannelRef.current) {
       controlChannelRef.current.postMessage({ type: "toggle" });
     }
   };
 
+  const scheme = COLOR_SCHEMES[schemeIdx];
   const current = items[items.length - 1];
-  const strokeStyle: React.CSSProperties = { WebkitTextStroke: "2px rgba(0,0,0,0.85)" };
 
   return (
     <div className="h-screen text-white flex flex-col select-none">
@@ -90,12 +122,12 @@ export function PopupApp() {
         {prevItem && (
           <div className="text-center opacity-30 max-w-full">
             <p className="text-sm leading-relaxed break-words line-clamp-2"
-              style={{ WebkitTextStroke: "1.5px rgba(0,0,0,0.7)" }}>
+              style={{ color: scheme.text, WebkitTextStroke: "1.5px " + scheme.stroke }}>
               {prevItem.sourceText}
             </p>
             {prevItem.translatedText && (
               <p className="text-xs mt-0.5"
-                style={{ WebkitTextStroke: "1px rgba(0,0,0,0.7)" }}>
+                style={{ color: scheme.text, WebkitTextStroke: "1px " + scheme.stroke }}>
                 {prevItem.translatedText}
               </p>
             )}
@@ -105,12 +137,12 @@ export function PopupApp() {
         {current ? (
           <div className="text-center max-w-full">
             <p className="text-xl font-bold leading-relaxed break-words"
-              style={strokeStyle}>
+              style={{ color: scheme.text, WebkitTextStroke: "2px " + scheme.stroke }}>
               {current.sourceText}
             </p>
             {current.translatedText && (
-              <p className="text-base text-blue-300 mt-1.5"
-                style={{ WebkitTextStroke: "1.5px rgba(0,0,0,0.85)" }}>
+              <p className="text-base mt-1.5"
+                style={{ color: scheme.text, WebkitTextStroke: "1.5px " + scheme.stroke, opacity: 0.85 }}>
                 {current.translatedText}
               </p>
             )}
@@ -118,7 +150,7 @@ export function PopupApp() {
         ) : interimText ? (
           <div className="text-center max-w-full">
             <p className="text-xl italic opacity-60"
-              style={strokeStyle}>
+              style={{ color: scheme.text, WebkitTextStroke: "2px " + scheme.stroke }}>
               {interimText}
             </p>
           </div>
@@ -127,8 +159,33 @@ export function PopupApp() {
         )}
       </div>
 
-      <div className={"flex items-center justify-end px-3 py-1.5 shrink-0 transition-opacity duration-300 " +
+      <div className={"flex items-center justify-between px-3 py-1.5 shrink-0 transition-opacity duration-300 " +
         (showUI ? "opacity-100" : "opacity-0 pointer-events-none")}>
+        <div className="flex items-center gap-1.5 relative">
+          <button
+            onClick={() => setShowPicker(!showPicker)}
+            className="text-white/40 hover:text-white/70 text-xs cursor-pointer transition-colors flex items-center gap-1"
+          >
+            <span className="inline-block w-3 h-3 rounded-full border border-white/30"
+              style={{ background: scheme.text }} />
+            {scheme.label}
+          </button>
+          {showPicker && (
+            <div className="absolute bottom-full left-0 mb-1 flex gap-1 bg-black/60 backdrop-blur rounded-lg p-1.5 border border-white/10">
+              {COLOR_SCHEMES.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setSchemeIdx(i); setShowPicker(false); }}
+                  className={"w-7 h-7 rounded-full border-2 transition-all cursor-pointer " +
+                    (i === schemeIdx ? "border-white scale-110" : "border-white/20 hover:border-white/50")}
+                  style={{ background: s.text }}
+                  title={s.label}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
         <button
           onClick={handleToggle}
           className={
