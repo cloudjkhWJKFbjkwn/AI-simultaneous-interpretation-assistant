@@ -82,20 +82,20 @@ export function PopupApp() {
   };
 
   const current = items[items.length - 1];
+  const strokeStyle: React.CSSProperties = { WebkitTextStroke: "2px rgba(0,0,0,0.85)" };
 
   return (
     <div className="h-screen text-white flex flex-col select-none">
-      {/* Lyric area - no background */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-2">
         {prevItem && (
-          <div className="text-center opacity-25 max-w-full">
+          <div className="text-center opacity-30 max-w-full">
             <p className="text-sm leading-relaxed break-words line-clamp-2"
-              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.8)" }}>
+              style={{ WebkitTextStroke: "1.5px rgba(0,0,0,0.7)" }}>
               {prevItem.sourceText}
             </p>
             {prevItem.translatedText && (
-              <p className="text-xs text-blue-300/60 mt-0.5"
-                style={{ textShadow: "0 1px 2px rgba(0,0,0,0.9)" }}>
+              <p className="text-xs mt-0.5"
+                style={{ WebkitTextStroke: "1px rgba(0,0,0,0.7)" }}>
                 {prevItem.translatedText}
               </p>
             )}
@@ -105,12 +105,12 @@ export function PopupApp() {
         {current ? (
           <div className="text-center max-w-full">
             <p className="text-xl font-bold leading-relaxed break-words"
-              style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 16px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,1)" }}>
+              style={strokeStyle}>
               {current.sourceText}
             </p>
             {current.translatedText && (
               <p className="text-base text-blue-300 mt-1.5"
-                style={{ textShadow: "0 1px 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9)" }}>
+                style={{ WebkitTextStroke: "1.5px rgba(0,0,0,0.85)" }}>
                 {current.translatedText}
               </p>
             )}
@@ -118,7 +118,7 @@ export function PopupApp() {
         ) : interimText ? (
           <div className="text-center max-w-full">
             <p className="text-xl italic opacity-60"
-              style={{ textShadow: "0 2px 8px rgba(0,0,0,1)" }}>
+              style={strokeStyle}>
               {interimText}
             </p>
           </div>
@@ -127,7 +127,6 @@ export function PopupApp() {
         )}
       </div>
 
-      {/* Minimal control: only visible on hover */}
       <div className={"flex items-center justify-end px-3 py-1.5 shrink-0 transition-opacity duration-300 " +
         (showUI ? "opacity-100" : "opacity-0 pointer-events-none")}>
         <button
