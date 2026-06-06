@@ -6,23 +6,12 @@ interface SubWindowItem {
   translatedText: string;
 }
 
-function loadOpacity(): number {
-  try {
-    const v = localStorage.getItem("popup-opacity");
-    if (v) {
-      const n = Number(v);
-      if (n >= 20 && n <= 100) return n;
-    }
-  } catch { /* ignore */ }
-  return 80;
-}
-
 export function PopupApp() {
   const [items, setItems] = useState<SubWindowItem[]>([]);
   const [interimText, setInterimText] = useState("");
   const [isListening, setIsListening] = useState(false);
-  const [opacity, setOpacity] = useState(loadOpacity);
-  const [showSlider, setShowSlider] = useState(false);
+  const [showUI, setShowUI] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlChannelRef = useRef<BroadcastChannel | null>(null);
 
@@ -39,9 +28,8 @@ export function PopupApp() {
     };
 
     syncChannel.onmessage = (e) => {
-      const msg = e.data;
-      if (msg.type === "sync") {
-        setItems(msg.items);
+      if (e.data?.type === "sync") {
+        setItems(e.data.items);
       }
     };
 
@@ -66,11 +54,30 @@ export function PopupApp() {
     }
   }, [items, interimText]);
 
+  // Auto-hide UI when listening
   useEffect(() => {
-    try {
-      localStorage.setItem("popup-opacity", String(opacity));
-    } catch { /* ignore */ }
-  }, [opacity]);
+    if (!isListening) {
+      setShowUI(true);
+      return;
+    }
+
+    const scheduleHide = () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = setTimeout(() => setShowUI(false), 3000);
+    };
+
+    const onMouseMove = () => {
+      setShowUI(true);
+      scheduleHide();
+    };
+
+    scheduleHide();
+    window.addEventListener("mousemove", onMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [isListening]);
 
   const handleToggle = () => {
     if (controlChannelRef.current) {
@@ -81,7 +88,9 @@ export function PopupApp() {
   const visibleItems = items.slice(-2);
 
   return (
-    <div className="h-screen bg-black/80 backdrop-blur-md text-white flex flex-col select-none" style={{ opacity: opacity / 100 }} onClick={() => setShowSlider(false)}>
+    <div className="h-screen text-white flex flex-col select-none transition-all duration-500"
+      style={{ background: showUI ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.15)" }}
+    >
       <div className="flex-1 flex flex-col justify-end px-4 pb-2">
         <div ref={containerRef} className="space-y-1">
           {visibleItems.length === 0 && !interimText ? (
@@ -107,37 +116,12 @@ export function PopupApp() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-t border-white/10 shrink-0 relative">
-        <div className="flex items-center gap-2">
-          <span className="text-white/50 text-xs">🎙️ AI 同传</span>
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowSlider(!showSlider); }}
-            className="text-white/40 hover:text-white/70 text-xs cursor-pointer transition-colors"
-            title="透明度"
-          >
-            {opacity}%
-          </button>
-        </div>
-
-        {showSlider && (
-          <div
-            className="absolute bottom-full left-4 right-4 mb-1 flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur rounded-lg border border-white/10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="text-white/50 text-xs w-6 text-right">{opacity}%</span>
-            <input
-              type="range"
-              min="20"
-              max="100"
-              value={opacity}
-              onChange={(e) => setOpacity(Number(e.target.value))}
-              className="flex-1 h-1 accent-blue-400 cursor-pointer"
-            />
-          </div>
-        )}
-
+      {/* Bottom bar: hidden in focus mode */}
+      <div className={"flex items-center justify-between px-4 py-2 shrink-0 transition-opacity duration-300 border-t " +
+        (showUI ? "opacity-100 bg-white/5 border-white/10" : "opacity-0 border-transparent pointer-events-none")}>
+        <span className="text-white/50 text-xs">🎙️ AI 同传</span>
         <button
-          onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+          onClick={handleToggle}
           className={
             "px-4 py-1 rounded-full text-xs font-medium transition-all cursor-pointer " +
             (isListening
