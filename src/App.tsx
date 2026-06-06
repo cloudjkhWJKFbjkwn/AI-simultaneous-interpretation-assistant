@@ -3,6 +3,7 @@ import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import type { ConnectionStatus } from "./hooks/useSpeechRecognition";
 import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext";
 import { SubtitleList } from "./components/SubtitleList";
+import { FloatingWindow } from "./components/FloatingWindow";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
   if (status === "connecting") return "连接中...";
@@ -90,7 +91,7 @@ function AppInner() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 overflow-hidden bg-slate-50">
         {statusMsg && (
           <div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 text-sm">
             🔔 {statusMsg}
@@ -110,8 +111,6 @@ function AppInner() {
             <p className="text-sm mt-1">说出英文，实时显示翻译结果</p>
           </div>
         )}
-
-        <SubtitleList interimText={interimText} />
       </main>
 
       <footer className="px-6 py-4 border-t border-slate-200 bg-white">
@@ -129,6 +128,11 @@ function AppInner() {
           </button>
         </div>
       </footer>
+
+      {/* Floating subtitle window (overlay) */}
+      <FloatingWindow interimText={interimText}>
+        <SubtitleList interimText={interimText} transparent />
+      </FloatingWindow>
     </div>
   );
 }

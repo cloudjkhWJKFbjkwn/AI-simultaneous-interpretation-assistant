@@ -9,9 +9,10 @@ import { WordPopover } from "./WordPopover";
 
 interface SubtitleListProps {
   interimText: string;
+  transparent?: boolean;
 }
 
-export function SubtitleList({ interimText }: SubtitleListProps) {
+export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { items, toggleMark } = useSubtitleContext();
   const { state, openWord, updateDefinition, closePopover } = useWordPopover();
@@ -22,14 +23,12 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
     (word: string, rect: DOMRect) => {
       openWord(word, rect);
 
-      // Try local dictionary first (instant)
       const localDef = lookupWord(word);
       if (localDef) {
         updateDefinition(localDef);
         return;
       }
 
-      // Fallback to Baidu Translate API
       fetchWordDefinition(word).then(def => {
         updateDefinition(def || "暂无释义");
       }).catch(() => {
@@ -43,7 +42,10 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
     <div className="relative flex-1 overflow-hidden">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto scroll-smooth px-6 py-4 space-y-3 bg-slate-50"
+        className={
+          "h-full overflow-y-auto scroll-smooth px-6 py-4 space-y-3 " +
+          (transparent ? "" : "bg-slate-50")
+        }
       >
         {items.map(item => (
           <SubtitleItem
@@ -55,8 +57,10 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
         ))}
 
         {interimText && (
-          <div className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm opacity-70">
-            <p className="text-slate-500 text-sm italic">{interimText}</p>
+          <div className="p-3 bg-white/10 rounded-lg border border-blue-200/30 shadow-sm opacity-70">
+            <p className={transparent ? "text-white/60 text-sm italic" : "text-slate-500 text-sm italic"}>
+              {interimText}
+            </p>
           </div>
         )}
       </div>
