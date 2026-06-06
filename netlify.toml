@@ -1,10 +1,33 @@
 [build]
   command = "npx vite build"
   publish = "dist"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
 
+# API ?? ? Netlify Functions
+[[redirects]]
+  from = "/api/baidu-asr"
+  to = "/.netlify/functions/baidu-asr"
+  status = 200
+
+[[redirects]]
+  from = "/api/baidu-token"
+  to = "/.netlify/functions/baidu-token"
+  status = 200
+
+[[redirects]]
+  from = "/api/baidu-translate"
+  to = "/.netlify/functions/baidu-translate"
+  status = 200
+
+[[redirects]]
+  from = "/api/deepseek"
+  to = "/.netlify/functions/deepseek"
+  status = 200
+
+# SPA ??
 [[redirects]]
   from = "/*"
   to = "/index.html"
