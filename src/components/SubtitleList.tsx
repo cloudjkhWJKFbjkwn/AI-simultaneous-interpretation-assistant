@@ -1,7 +1,10 @@
-﻿import { useRef } from "react";
+﻿import { useRef, useCallback } from "react";
 import { useSubtitleContext } from "../context/SubtitleContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
+import { useWordPopover } from "../hooks/useWordPopover";
+import { MockTranslationService } from "../services/MockTranslationService";
 import { SubtitleItem } from "./SubtitleItem";
+import { WordPopover } from "./WordPopover";
 
 interface SubtitleListProps {
   interimText: string;
@@ -10,8 +13,17 @@ interface SubtitleListProps {
 export function SubtitleList({ interimText }: SubtitleListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { items, toggleMark } = useSubtitleContext();
+  const { state, openWord, closePopover } = useWordPopover();
 
   const { isPaused, scrollToBottom } = useAutoScroll(containerRef, items.length);
+
+  const handleWordClick = useCallback(
+    (word: string, rect: DOMRect) => {
+      const def = MockTranslationService.lookupWord(word);
+      openWord(word, def || "暂无释义", rect);
+    },
+    [openWord]
+  );
 
   return (
     <div className="relative flex-1 overflow-hidden">
@@ -20,7 +32,12 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
         className="h-full overflow-y-auto scroll-smooth px-6 py-4 space-y-3 bg-slate-50"
       >
         {items.map(item => (
-          <SubtitleItem key={item.id} item={item} onToggleMark={toggleMark} />
+          <SubtitleItem
+            key={item.id}
+            item={item}
+            onToggleMark={toggleMark}
+            onWordClick={handleWordClick}
+          />
         ))}
 
         {interimText && (
@@ -41,6 +58,14 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
           </svg>
         </button>
       )}
+
+      <WordPopover
+        word={state.word}
+        definition={state.definition}
+        anchorRect={state.anchorRect}
+        isOpen={state.isOpen}
+        onClose={closePopover}
+      />
     </div>
   );
 }
