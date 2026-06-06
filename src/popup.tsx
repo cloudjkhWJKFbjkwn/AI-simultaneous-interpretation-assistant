@@ -15,7 +15,7 @@ function loadTextColor(): string {
     const v = localStorage.getItem("popup-text-color");
     if (v) return v;
   } catch { /* ignore */ }
-  return "#ffffff";
+  return "#000000";
 }
 
 export function PopupApp() {
@@ -186,3 +186,4 @@ export function PopupApp() {
     </div>
   );
 }
+
