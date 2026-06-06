@@ -27,6 +27,7 @@ export function PopupApp() {
   const [prevItem, setPrevItem] = useState<SubWindowItem | null>(null);
   const [textColor, setTextColor] = useState(loadTextColor);
   const [showPicker, setShowPicker] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controlChannelRef = useRef<BroadcastChannel | null>(null);
 
@@ -39,6 +40,8 @@ export function PopupApp() {
     ctrlChannel.onmessage = (e) => {
       if (e.data?.type === "status") {
         setIsListening(e.data.isListening || false);
+      } else if (e.data?.type === "error") {
+        setErrorMsg(e.data.message || null);
       }
     };
 
@@ -69,6 +72,7 @@ export function PopupApp() {
   useEffect(() => {
     if (!isListening) {
       setShowUI(true);
+      setErrorMsg(null);
       return;
     }
 
@@ -104,6 +108,12 @@ export function PopupApp() {
 
   return (
     <div className="h-screen flex flex-col select-none">
+      {errorMsg && (
+        <div className="absolute top-2 left-2 right-2 z-10 p-2.5 bg-rose-500/90 backdrop-blur rounded-lg text-white text-xs text-center font-medium animate-[fadeIn_0.2s_ease-out] shadow-lg">
+          ⚠️ {errorMsg}
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-2"
         style={{ background: "rgba(0,0,0,0.15)" }}>
         {prevItem && (
