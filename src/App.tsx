@@ -5,6 +5,8 @@ import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext"
 import { SubtitleList } from "./components/SubtitleList";
 import { exportAsTxt, exportAsMarkdown, exportAsJson, type ExportFormat } from "./services/ExportService";
 import { CorrectionService } from "./services/CorrectionService";
+import { AsrPostProcessor } from "./services/AsrPostProcessor";
+import { DeepSeekService } from "./services/DeepSeekService";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
   if (status === "connecting") return "连接中...";
@@ -33,8 +35,8 @@ function AppInner() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const itemsRef = useRef(items);
   const correctionRef = useRef(new CorrectionService());
+  const asrPostRef = useRef(new AsrPostProcessor(new DeepSeekService()));
 
-  // Keep itemsRef in sync
   useEffect(() => { itemsRef.current = items; }, [items]);
 
   const handleFinalSentence = useCallback(
@@ -48,7 +50,6 @@ function AppInner() {
     (id: string, translatedText: string) => {
       correctSubtitle(id, translatedText);
 
-      // 上下文修正：检查新句子是否包含转折词
       const allItems = itemsRef.current;
       const currentItem = allItems.find((s) => s.id === id);
       if (!currentItem) return;
@@ -56,16 +57,14 @@ function AppInner() {
       const correction = correctionRef.current;
       if (!correction.shouldCorrect(currentItem.sourceText)) return;
 
-      // 找到前面的 final 句子
       const finalItems = allItems.filter((s) => s.status === "final" && s.id !== id);
-      const lookback = finalItems.slice(-correction.lookbackCount ?? 2);
+      const lookback = finalItems.slice(-correction.lookbackCount);
 
       for (const prev of lookback) {
         if (!correction.markProcessing(prev.id)) continue;
 
         const context = correction.buildCorrectionContext(prev.sourceText, currentItem.sourceText);
 
-        // 动态导入翻译服务
         import("./services/TranslationService").then(({ createTranslationService, getDefaultStrategy }) => {
           const strategy = getDefaultStrategy();
           return createTranslationService({
@@ -76,9 +75,7 @@ function AppInner() {
           return ts.translate(context);
         }).then((newTranslation) => {
           autoCorrectSubtitle(prev.id, newTranslation);
-        }).catch(() => {
-          // 翻译失败，静默忽略
-        }).finally(() => {
+        }).catch(() => {}).finally(() => {
           correction.clearProcessing(prev.id);
         });
       }
@@ -89,35 +86,31 @@ function AppInner() {
   const { interimText, isListening, error, connectionStatus, start, stop } = useSpeechRecognition({
     onFinalSentence: handleFinalSentence,
     onTranslationReady: handleTranslationReady,
+    asrPostProcessor: asrPostRef.current,
   });
 
   const [statusMsg, setStatusMsg] = useState("");
 
-  // Keep refs in sync
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { startRef.current = start; }, [start]);
   useEffect(() => { stopRef.current = stop; }, [stop]);
 
-  // Reset correction state when stopping
   useEffect(() => {
     if (!isListening) {
       correctionRef.current.reset();
     }
   }, [isListening]);
 
-  // Broadcast interim text to popup
   useEffect(() => {
     if (!interimChannelRef.current) return;
     interimChannelRef.current.postMessage({ type: "interim", text: interimText });
   }, [interimText]);
 
-  // Broadcast listening status to popup whenever it changes
   useEffect(() => {
     if (!controlChannelRef.current) return;
     controlChannelRef.current.postMessage({ type: "status", isListening });
   }, [isListening]);
 
-  // Set up control channel once (stable)
   useEffect(() => {
     controlChannelRef.current = new BroadcastChannel("subtitle-control");
     const channel = controlChannelRef.current;
@@ -138,7 +131,6 @@ function AppInner() {
     };
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       interimChannelRef.current?.close();

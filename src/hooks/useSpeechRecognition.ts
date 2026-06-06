@@ -1,14 +1,16 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+﻿import { useRef, useState, useCallback, useEffect } from 'react';
 import { SpeechRecognitionService } from '../services/SpeechRecognitionService';
 import { AudioCapture } from '../services/AudioCapture';
 import { createTranslationService, getDefaultStrategy } from '../services/TranslationService';
 import type { SpeechResult, SubtitleItem, TranslationService } from '../types';
+import type { AsrPostProcessor } from '../services/AsrPostProcessor';
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnected';
 
 interface UseSpeechRecognitionOptions {
   onFinalSentence?: (sourceText: string, timestamp: number) => string | undefined;
   onTranslationReady?: (id: string, translatedText: string) => void;
+  asrPostProcessor?: AsrPostProcessor | null;
 }
 
 interface UseSpeechRecognitionReturn {
@@ -64,15 +66,23 @@ export function useSpeechRecognition(
       capture.startRecording(SAMPLE_RATE, BUFFER_SIZE, (pcmData: Int16Array) => { asr.sendAudio(pcmData); });
       await new Promise(r => setTimeout(r, 200));
       await asr.start(
-        (result: SpeechResult) => {
+        async (result: SpeechResult) => {
           if (result.type === 'interim') {
             setInterimText(result.text);
           } else {
             setInterimText('');
-            const sourceText = result.text;
+
+            // LLM 后处理：纠正 ASR 识别错误
+            let sourceText = result.text;
+            const processor = optionsRef.current.asrPostProcessor;
+            if (processor) {
+              try {
+                sourceText = await processor.correct(sourceText);
+              } catch { /* 纠错失败用原文 */ }
+            }
+
             const timestamp = result.timestamp;
 
-            // 如果提供了外部回调，使用外部字幕管理
             if (optionsRef.current.onFinalSentence) {
               const id = optionsRef.current.onFinalSentence(sourceText, timestamp);
               if (id && translateRef.current) {
@@ -81,13 +91,13 @@ export function useSpeechRecognition(
                 });
               }
             } else {
-              // 回退：内部管理字幕状态
               const item: SubtitleItem = {
                 id: 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                 sourceText,
                 translatedText: '',
                 timestamp,
                 marked: false,
+                corrected: false,
                 version: 0,
                 status: 'final',
               };

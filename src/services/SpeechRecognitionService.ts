@@ -1,15 +1,15 @@
 ﻿import type { SpeechResult } from "../types";
 import { PunctuationService } from "./PunctuationService";
 
-export type RecognitionCallback = (result: SpeechResult) => void;
+export type RecognitionCallback = (result: SpeechResult) => void | Promise<void>;
 export type ErrorCallback = (error: string) => void;
 export type EndCallback = () => void;
 export type StatusCallback = (status: "connecting" | "connected" | "disconnected") => void;
 
 const SILENCE_THRESHOLD = 600;
-const SILENCE_FRAMES = 8;         // ~1 秒静音触发发送
-const MAX_INTERVAL = 3000;        // 最长 3 秒也发送
-const TEXT_IDLE_TIMEOUT = 3000;   // textBuffer 空闲 5 秒自动作为 final 输出
+const SILENCE_FRAMES = 8;
+const MAX_INTERVAL = 3000;
+const TEXT_IDLE_TIMEOUT = 5000;
 
 export class SpeechRecognitionService {
   private _isActive = false;
@@ -50,12 +50,10 @@ export class SpeechRecognitionService {
   private checkInterval(): void {
     if (!this._isActive) return;
 
-    // 音频发送兜底
     if (Date.now() - this.lastSendTime > MAX_INTERVAL && this.audioChunks.length > 0) {
       this.flushAudio();
     }
 
-    // textBuffer 空闲超时：5 秒无新文本，自动作为 final 输出
     if (
       this.textBuffer.trim() &&
       this.lastTextUpdate > 0 &&
@@ -76,7 +74,6 @@ export class SpeechRecognitionService {
   private segmentSentences(text: string): string[] {
     if (!text) return [];
     const sentences: string[] = [];
-    // Split on sentence-ending punctuation
     const parts = text.split(/(?<=[.!?])\s+/);
     let buf = "";
     for (const part of parts) {
@@ -92,22 +89,17 @@ export class SpeechRecognitionService {
 
   private processText(newPunctuatedChunk: string): void {
     this.lastTextUpdate = Date.now();
-    // Append punctuated chunk to buffer
     this.textBuffer += (this.textBuffer ? " " : "") + newPunctuatedChunk;
 
-    // Segment into sentences
     const sentences = this.segmentSentences(this.textBuffer);
 
-    // Emit complete sentences (all but possibly the last)
     const completeCount = sentences.length > 1 ? sentences.length - 1 : 0;
     for (let i = 0; i < completeCount; i++) {
       this.onResult?.({ type: "final", text: sentences[i], timestamp: Date.now() });
     }
 
-    // Keep only the last fragment in the buffer
     this.textBuffer = sentences.length > 0 ? sentences[sentences.length - 1] : "";
 
-    // Show the last fragment as interim (if not empty)
     if (this.textBuffer) {
       this.onResult?.({ type: "interim", text: this.textBuffer, timestamp: Date.now() });
     }
@@ -160,7 +152,6 @@ export class SpeechRecognitionService {
     this._isActive = false;
     this.onStatus?.("disconnected");
     this.flushAudio().then(() => {
-      // Emit any remaining text in buffer as final
       if (this.textBuffer.trim()) {
         this.onResult?.({ type: "final", text: this.textBuffer.trim(), timestamp: Date.now() });
         this.textBuffer = "";

@@ -30,7 +30,6 @@ function baiduApiPlugin() {
   return {
     name: "baidu-api-proxy",
     configureServer(server: any) {
-      // ASR proxy
       server.middlewares.use("/api/baidu-asr", async (req: any, res: any) => {
         try {
           const token = await getToken();
@@ -66,7 +65,6 @@ function baiduApiPlugin() {
         }
       });
 
-      // Token proxy (for debugging)
       server.middlewares.use("/api/baidu-token", async (_req: any, res: any) => {
         try {
           const token = await getToken();
@@ -81,8 +79,68 @@ function baiduApiPlugin() {
   };
 }
 
+function deepseekApiPlugin() {
+  return {
+    name: "deepseek-api-proxy",
+    configureServer(server: any) {
+      server.middlewares.use("/api/deepseek", async (req: any, res: any) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: "Method not allowed" }));
+          return;
+        }
+
+        const apiKey = process.env.DEEPSEEK_API_KEY;
+        if (!apiKey) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: "DEEPSEEK_API_KEY not configured" }));
+          return;
+        }
+
+        try {
+          const chunks: Buffer[] = [];
+          req.on("data", (c: Buffer) => chunks.push(c));
+          await new Promise((r) => req.on("end", r));
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          const { messages } = body;
+
+          const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + apiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages,
+              temperature: 0.1,
+              max_tokens: 300,
+              stream: false,
+            }),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            res.statusCode = response.status;
+            res.end(JSON.stringify({ error: errText }));
+            return;
+          }
+
+          const data = await response.json() as any;
+          const content = data.choices?.[0]?.message?.content || "";
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ content }));
+        } catch (err: any) {
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error: "Proxy: " + err.message }));
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), baiduApiPlugin()],
+  plugins: [react(), tailwindcss(), baiduApiPlugin(), deepseekApiPlugin()],
   build: {
     rollupOptions: {
       input: {
