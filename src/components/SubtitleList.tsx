@@ -22,7 +22,7 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
     (word: string, rect: DOMRect) => {
       openWord(word, rect);
 
-      // First try local dictionary (instant)
+      // Try local dictionary first (instant)
       const localDef = lookupWord(word);
       if (localDef) {
         updateDefinition(localDef);
@@ -32,6 +32,8 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
       // Fallback to Baidu Translate API
       fetchWordDefinition(word).then(def => {
         updateDefinition(def || "暂无释义");
+      }).catch(() => {
+        updateDefinition("暂无释义");
       });
     },
     [openWord, updateDefinition]

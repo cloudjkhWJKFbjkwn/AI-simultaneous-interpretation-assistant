@@ -1115,7 +1115,7 @@ function translateWord(w: string): string {
  * Returns the Chinese definition or null if not found.
  */
 export function lookupWord(word: string): string | null {
-  const key = word.toLowerCase().replace(/[,.!?;:()\\[\\]{}]/g, "").trim();
+  const key = word.toLowerCase().replace(/[^a-z']/gi, "").trim();
   if (!key) return null;
   return DICTIONARY[key] || null;
 }
@@ -1166,5 +1166,6 @@ export class MockTranslationService implements TranslationService {
     return translated.join("");
   }
 }
+
 
 

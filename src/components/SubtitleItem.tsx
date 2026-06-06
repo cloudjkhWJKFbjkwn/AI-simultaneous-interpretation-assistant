@@ -25,15 +25,6 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
     return () => cancelAnimationFrame(timer);
   }, []);
 
-  const handleWordClick = useCallback(
-    (word: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      onWordClick(word, rect);
-    },
-    [onWordClick]
-  );
-
   const renderSourceText = () => {
     const words = splitWords(item.sourceText);
     if (words.length === 0) {
@@ -55,8 +46,12 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
         <span
           key={"w-" + seg.index}
           className="cursor-pointer text-blue-500 hover:text-blue-700 hover:underline decoration-dotted underline-offset-2 transition-colors"
-          onClick={e => handleWordClick(seg.word, e)}
-          title={"查看 '" + seg.word + "' 的释义"}
+          onClick={(e) => {
+            e.stopPropagation();
+            const rect = (e.target as HTMLElement).getBoundingClientRect();
+            onWordClick(seg.word, rect);
+          }}
+          title={"释义: " + seg.word}
         >
           {seg.word}
         </span>
@@ -109,5 +104,3 @@ function SubtitleItemInner({ item, onToggleMark, onWordClick }: SubtitleItemProp
 }
 
 export const SubtitleItem = SubtitleItemInner;
-
-

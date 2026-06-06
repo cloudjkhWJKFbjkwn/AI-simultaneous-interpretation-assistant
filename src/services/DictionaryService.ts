@@ -1,37 +1,23 @@
 ﻿export async function fetchWordDefinition(word: string): Promise<string | null> {
-  const key = word.toLowerCase().replace(/[,.!?;:()\[\]{}]/g, "").trim();
+  const key = word.toLowerCase().replace(/[^a-z']/gi, "").trim();
   if (!key) return null;
 
   try {
-    // Use Vite proxy to avoid CORS and network issues
-    const res = await fetch("/api/dict/" + encodeURIComponent(key));
+    const res = await fetch("/api/baidu-translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: key, from: "en", to: "zh" }),
+    });
+
     if (!res.ok) return null;
     const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return null;
+    if (data.error_code) return null;
 
-    const entry = data[0];
-    const parts: string[] = [];
-
-    if (entry.phonetic) {
-      parts.push(entry.phonetic);
-    } else if (entry.phonetics?.length > 0) {
-      const p = entry.phonetics.find((ph: { text?: string }) => ph.text);
-      if (p) parts.push(p.text);
+    if (data.trans_result && data.trans_result.length > 0) {
+      return data.trans_result.map((t: { dst: string }) => t.dst).join("");
     }
 
-    for (const meaning of entry.meanings || []) {
-      const pos = meaning.partOfSpeech;
-      for (const def of meaning.definitions || []) {
-        let line = def.definition;
-        if (pos) line = "[" + pos + "] " + line;
-        if (def.example) line += '  e.g. "' + def.example + '"';
-        parts.push(line);
-        break;
-      }
-      if (parts.length > 2) break;
-    }
-
-    return parts.length > 0 ? parts.join("\n") : null;
+    return null;
   } catch {
     return null;
   }
