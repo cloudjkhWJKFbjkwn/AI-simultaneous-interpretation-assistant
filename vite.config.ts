@@ -108,7 +108,18 @@ function baiduApiPlugin() {
   };
 }
 
-export default defineConfig({ plugins: [react(), tailwindcss(), baiduApiPlugin()] })
+export default defineConfig({
+  plugins: [react(), tailwindcss(), baiduApiPlugin()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        popup: 'popup.html',
+      },
+    },
+  },
+})
+
 
 
 

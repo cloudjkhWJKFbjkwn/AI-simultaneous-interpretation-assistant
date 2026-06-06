@@ -1,8 +1,7 @@
-﻿import { useState, useCallback } from "react";
+﻿import { useState, useCallback, useEffect, useRef } from "react";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import type { ConnectionStatus } from "./hooks/useSpeechRecognition";
 import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext";
-import { SubtitleList } from "./components/SubtitleList";
 import { FloatingWindow } from "./components/FloatingWindow";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
@@ -23,6 +22,8 @@ function getStatusDotClass(status: ConnectionStatus, isListening: boolean): stri
 
 function AppInner() {
   const { items, addSubtitle, correctSubtitle, clearSubtitles } = useSubtitleContext();
+  const popupRef = useRef<Window | null>(null);
+  const broadcastRef = useRef<BroadcastChannel | null>(null);
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
@@ -45,6 +46,12 @@ function AppInner() {
 
   const [statusMsg, setStatusMsg] = useState("");
 
+  // Broadcast interimText to popup
+  useEffect(() => {
+    if (!broadcastRef.current) return;
+    broadcastRef.current.postMessage({ type: "interim", text: interimText });
+  }, [interimText]);
+
   const handleToggle = async () => {
     if (isListening) {
       stop();
@@ -63,6 +70,31 @@ function AppInner() {
   const handleClear = () => {
     if (items.length > 0 && window.confirm("确定要清空全部字幕吗？")) {
       clearSubtitles();
+    }
+  };
+
+  const openPopup = () => {
+    if (popupRef.current && !popupRef.current.closed) {
+      popupRef.current.focus();
+      return;
+    }
+
+    const w = 400;
+    const h = 480;
+    const left = window.screen.availWidth - w - 20;
+    const top = window.screen.availHeight - h - 80;
+
+    const popup = window.open(
+      "/popup.html",
+      "subtitle-popup",
+      "width=" + w + ",height=" + h + ",left=" + left + ",top=" + top + ",resizable=yes,scrollbars=no"
+    );
+
+    if (popup) {
+      popupRef.current = popup;
+
+      // Create broadcast channel for interim text
+      broadcastRef.current = new BroadcastChannel("subtitle-interim");
     }
   };
 
@@ -86,6 +118,13 @@ function AppInner() {
               清空 ({items.length})
             </button>
           )}
+          <button
+            onClick={openPopup}
+            className="text-xs text-blue-500 hover:text-blue-700 transition-colors cursor-pointer border border-blue-200 rounded px-2 py-0.5 hover:bg-blue-50"
+            title="打开独立字幕窗口"
+          >
+            字幕窗
+          </button>
           <span className={dotClass} />
           <span className="text-sm text-slate-400">{statusText}</span>
         </div>
@@ -129,10 +168,8 @@ function AppInner() {
         </div>
       </footer>
 
-      {/* Floating subtitle window (overlay) */}
-      <FloatingWindow interimText={interimText}>
-        <SubtitleList interimText={interimText} transparent />
-      </FloatingWindow>
+      {/* Floating subtitle window (in-page overlay) */}
+      <FloatingWindow interimText={interimText} />
     </div>
   );
 }
