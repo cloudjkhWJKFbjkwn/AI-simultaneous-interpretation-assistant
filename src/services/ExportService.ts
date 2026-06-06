@@ -6,15 +6,19 @@ function formatTime(ts: number): string {
   const h = String(d.getHours()).padStart(2, "0");
   const m = String(d.getMinutes()).padStart(2, "0");
   const s = String(d.getSeconds()).padStart(2, "0");
-  return `[${h}:${m}:${s}]`;
+  return "[" + h + ":" + m + ":" + s + "]";
 }
 
 /** 生成含时间戳的文件名 */
 function generateFilename(ext: string): string {
   const now = new Date();
-  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const time = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-  return `AI同传字幕_${date}_${time}.${ext}`;
+  const date = now.getFullYear().toString()
+    + String(now.getMonth() + 1).padStart(2, "0")
+    + String(now.getDate()).padStart(2, "0");
+  const time = String(now.getHours()).padStart(2, "0")
+    + String(now.getMinutes()).padStart(2, "0")
+    + String(now.getSeconds()).padStart(2, "0");
+  return "AI同传字幕_" + date + "_" + time + "." + ext;
 }
 
 /** 触发浏览器下载 */
@@ -28,14 +32,21 @@ function triggerDownload(content: string, filename: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+/** 获取条目前缀标记 */
+function getPrefix(item: SubtitleItem): string {
+  if (item.marked) return "⭐ ";
+  if (item.corrected) return "✨ ";
+  return "";
+}
+
 /** 导出为 TXT 格式 */
 export function exportAsTxt(items: SubtitleItem[]): void {
   const lines = items.map((item) => {
-    const prefix = item.marked ? "⭐ " : "";
+    const prefix = getPrefix(item);
     const time = formatTime(item.timestamp);
     const src = item.sourceText;
     const tgt = item.translatedText || "(翻译中)";
-    return `${prefix}${time} ${src}\n    → ${tgt}`;
+    return prefix + time + " " + src + "\n    → " + tgt;
   });
   const content = lines.join("\n\n");
   triggerDownload(content, generateFilename("txt"), "text/plain");
@@ -52,9 +63,18 @@ export function exportAsMarkdown(items: SubtitleItem[]): void {
 
   for (const item of items) {
     const time = formatTime(item.timestamp);
-    const src = item.marked ? `**⭐ ${item.sourceText}**` : item.sourceText;
+    let prefix = "";
+    let suffix = "";
+    if (item.marked) {
+      prefix = "**⭐ ";
+      suffix = "**";
+    } else if (item.corrected) {
+      prefix = "*✨ ";
+      suffix = "*";
+    }
+    const src = prefix + item.sourceText + suffix;
     const tgt = item.translatedText || "(翻译中)";
-    lines.push(`| ${time} | ${src} | ${tgt} |`);
+    lines.push("| " + time + " | " + src + " | " + tgt + " |");
   }
 
   const content = lines.join("\n");

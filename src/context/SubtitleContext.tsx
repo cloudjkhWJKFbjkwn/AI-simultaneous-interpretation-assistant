@@ -34,6 +34,7 @@ export function SubtitleProvider({ children }: { children: ReactNode }) {
             id: item.id,
             sourceText: item.sourceText,
             translatedText: item.translatedText,
+            corrected: item.corrected,
           };
         }),
         interimText: "",

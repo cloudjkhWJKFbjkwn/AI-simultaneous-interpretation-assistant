@@ -15,6 +15,7 @@ export interface SubtitleItem {
   translatedText: string;
   timestamp: number;
   marked: boolean;
+  corrected: boolean;
   version: number;
   status: SubtitleStatus;
 }
@@ -23,6 +24,7 @@ export interface SubtitleItem {
 export type SubtitleAction =
   | { type: "add"; item: SubtitleItem }
   | { type: "correct"; id: string; newTranslatedText: string }
+  | { type: "autoCorrect"; id: string; newTranslatedText: string }
   | { type: "toggleMark"; id: string }
   | { type: "updateStatus"; id: string; status: SubtitleStatus }
   | { type: "edit"; id: string; sourceText?: string; translatedText?: string }
@@ -37,4 +39,5 @@ export interface TranslationService {
 export interface CorrectionConfig {
   triggerWords: string[];
   lookbackCount: number;
+  minSentenceLength: number;
 }

@@ -4,6 +4,7 @@ import type { ConnectionStatus } from "./hooks/useSpeechRecognition";
 import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext";
 import { SubtitleList } from "./components/SubtitleList";
 import { exportAsTxt, exportAsMarkdown, exportAsJson, type ExportFormat } from "./services/ExportService";
+import { CorrectionService } from "./services/CorrectionService";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
   if (status === "connecting") return "连接中...";
@@ -22,7 +23,7 @@ function getStatusDotClass(status: ConnectionStatus, isListening: boolean): stri
 }
 
 function AppInner() {
-  const { items, addSubtitle, correctSubtitle, clearSubtitles } = useSubtitleContext();
+  const { items, addSubtitle, correctSubtitle, autoCorrectSubtitle, clearSubtitles } = useSubtitleContext();
   const popupRef = useRef<Window | null>(null);
   const interimChannelRef = useRef<BroadcastChannel | null>(null);
   const controlChannelRef = useRef<BroadcastChannel | null>(null);
@@ -30,6 +31,11 @@ function AppInner() {
   const startRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const stopRef = useRef<() => void>(() => {});
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const itemsRef = useRef(items);
+  const correctionRef = useRef(new CorrectionService());
+
+  // Keep itemsRef in sync
+  useEffect(() => { itemsRef.current = items; }, [items]);
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
@@ -41,8 +47,43 @@ function AppInner() {
   const handleTranslationReady = useCallback(
     (id: string, translatedText: string) => {
       correctSubtitle(id, translatedText);
+
+      // 上下文修正：检查新句子是否包含转折词
+      const allItems = itemsRef.current;
+      const currentItem = allItems.find((s) => s.id === id);
+      if (!currentItem) return;
+
+      const correction = correctionRef.current;
+      if (!correction.shouldCorrect(currentItem.sourceText)) return;
+
+      // 找到前面的 final 句子
+      const finalItems = allItems.filter((s) => s.status === "final" && s.id !== id);
+      const lookback = finalItems.slice(-correction.lookbackCount ?? 2);
+
+      for (const prev of lookback) {
+        if (!correction.markProcessing(prev.id)) continue;
+
+        const context = correction.buildCorrectionContext(prev.sourceText, currentItem.sourceText);
+
+        // 动态导入翻译服务
+        import("./services/TranslationService").then(({ createTranslationService, getDefaultStrategy }) => {
+          const strategy = getDefaultStrategy();
+          return createTranslationService({
+            strategy,
+            baiduAppId: strategy === "baidu" ? "Q5Hd_d8hc0g70sfpjfm4rr170" : undefined,
+          });
+        }).then((ts) => {
+          return ts.translate(context);
+        }).then((newTranslation) => {
+          autoCorrectSubtitle(prev.id, newTranslation);
+        }).catch(() => {
+          // 翻译失败，静默忽略
+        }).finally(() => {
+          correction.clearProcessing(prev.id);
+        });
+      }
     },
-    [correctSubtitle]
+    [correctSubtitle, autoCorrectSubtitle]
   );
 
   const { interimText, isListening, error, connectionStatus, start, stop } = useSpeechRecognition({
@@ -56,6 +97,13 @@ function AppInner() {
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { startRef.current = start; }, [start]);
   useEffect(() => { stopRef.current = stop; }, [stop]);
+
+  // Reset correction state when stopping
+  useEffect(() => {
+    if (!isListening) {
+      correctionRef.current.reset();
+    }
+  }, [isListening]);
 
   // Broadcast interim text to popup
   useEffect(() => {
@@ -100,6 +148,7 @@ function AppInner() {
   const handleClear = () => {
     if (items.length > 0 && window.confirm("确定要清空全部字幕吗？")) {
       clearSubtitles();
+      correctionRef.current.reset();
     }
   };
 
@@ -142,10 +191,15 @@ function AppInner() {
       popupRef.current = popup;
       interimChannelRef.current = new BroadcastChannel("subtitle-interim");
 
-      // Send current status immediately
       if (controlChannelRef.current) {
-        controlChannelRef.current.postMessage({ type: "status", isListening });
+        controlChannelRef.current.postMessage({ type: "status", isListening: isListeningRef.current });
       }
+
+      popup.addEventListener("beforeunload", () => {
+        interimChannelRef.current?.close();
+        interimChannelRef.current = null;
+        popupRef.current = null;
+      });
     }
   };
 

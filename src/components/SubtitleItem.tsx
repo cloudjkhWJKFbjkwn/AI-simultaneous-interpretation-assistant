@@ -47,7 +47,6 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
       if (newText && newText !== item.sourceText) {
         onEdit(item.id, newText, undefined);
         setEdited(true);
-        // Auto retranslate after editing English source text
         onRetranslate(item.id, newText);
       }
     }
@@ -151,6 +150,11 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
     if (item.translatedText) {
       return (
         <>
+          {item.corrected && (
+            <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 mr-1" title="根据后文自动修正">
+              <span className="text-[10px]">✨</span>
+            </span>
+          )}
           {item.translatedText}
           {item.version > 0 && (
             <span className="text-xs text-slate-300 ml-1">v{item.version + 1}</span>
@@ -162,6 +166,14 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
     return <span className="text-slate-300 text-xs animate-pulse">翻译中...</span>;
   };
 
+  // 确定边框样式
+  const getBorderClass = () => {
+    if (edited) return " border-blue-400 border-dashed";
+    if (item.corrected) return " border-emerald-400 border-l-4";
+    if (item.marked) return " border-yellow-300";
+    return " border-slate-100";
+  };
+
   return (
     <div
       className={
@@ -169,9 +181,7 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
         "hover:border-yellow-300 transition-colors duration-200 " +
         "opacity-0 translate-y-2.5 " +
         (visible ? "opacity-100 translate-y-0 duration-[200ms] ease-out" : "") +
-        (edited ? " border-blue-400 border-dashed" : "") +
-        (!edited && item.marked ? " border-yellow-300" : "") +
-        (!edited && !item.marked ? " border-slate-100" : "")
+        getBorderClass()
       }
       onClick={() => onToggleMark(item.id)}
     >

@@ -4,6 +4,7 @@ interface SubWindowItem {
   id: string;
   sourceText: string;
   translatedText: string;
+  corrected?: boolean;
 }
 
 const TEXT_COLORS = [
@@ -110,6 +111,7 @@ export function PopupApp() {
             <p className="text-sm leading-relaxed break-words line-clamp-2 font-medium"
               style={{ color: textColor }}>
               {prevItem.sourceText}
+              {prevItem.corrected ? " ✨" : ""}
             </p>
             {prevItem.translatedText && (
               <p className="text-xs mt-0.5"
@@ -125,6 +127,7 @@ export function PopupApp() {
             <p className="text-xl font-bold leading-relaxed break-words"
               style={{ color: textColor }}>
               {current.sourceText}
+              {current.corrected ? " ✨" : ""}
             </p>
             {current.translatedText && (
               <p className="text-base mt-1.5 opacity-80"
@@ -186,4 +189,3 @@ export function PopupApp() {
     </div>
   );
 }
-

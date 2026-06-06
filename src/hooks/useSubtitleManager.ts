@@ -8,7 +8,7 @@ function generateId(): string {
 const MAX_SUBTITLES = 500;
 
 export interface SubtitleChangeEvent {
-  type: "added" | "corrected" | "marked" | "cleared" | "statusUpdated";
+  type: "added" | "corrected" | "autoCorrected" | "marked" | "cleared" | "statusUpdated";
   id?: string;
   version?: number;
 }
@@ -41,6 +41,19 @@ function subtitleReducer(state: SubtitleState, action: SubtitleAction): Subtitle
       return {
         items,
         lastEvents: [{ type: "corrected", id: action.id, version: target?.version }],
+      };
+    }
+
+    case "autoCorrect": {
+      const items = state.items.map(s =>
+        s.id === action.id
+          ? { ...s, translatedText: action.newTranslatedText, corrected: true, version: s.version + 1 }
+          : s
+      );
+      const target = items.find(s => s.id === action.id);
+      return {
+        items,
+        lastEvents: [{ type: "autoCorrected", id: action.id, version: target?.version }],
       };
     }
 
@@ -98,6 +111,7 @@ export interface SubtitleManager {
     status?: SubtitleStatus
   ) => string;
   correctSubtitle: (id: string, newTranslatedText: string) => void;
+  autoCorrectSubtitle: (id: string, newTranslatedText: string) => void;
   toggleMark: (id: string) => void;
   updateStatus: (id: string, status: SubtitleStatus) => void;
   clearSubtitles: () => void;
@@ -123,6 +137,7 @@ export function useSubtitleManager(): SubtitleManager {
         translatedText,
         timestamp: Date.now(),
         marked: false,
+        corrected: false,
         version: 0,
         status,
       };
@@ -134,6 +149,10 @@ export function useSubtitleManager(): SubtitleManager {
 
   const correctSubtitle = useCallback((id: string, newTranslatedText: string) => {
     dispatch({ type: "correct", id, newTranslatedText });
+  }, []);
+
+  const autoCorrectSubtitle = useCallback((id: string, newTranslatedText: string) => {
+    dispatch({ type: "autoCorrect", id, newTranslatedText });
   }, []);
 
   const toggleMark = useCallback((id: string) => {
@@ -160,6 +179,7 @@ export function useSubtitleManager(): SubtitleManager {
     lastEvents: state.lastEvents,
     addSubtitle,
     correctSubtitle,
+    autoCorrectSubtitle,
     toggleMark,
     updateStatus,
     clearSubtitles,
