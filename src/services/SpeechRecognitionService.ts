@@ -9,6 +9,7 @@ export type StatusCallback = (status: 'connecting' | 'connected' | 'disconnected
 const SILENCE_THRESHOLD = 600;
 const SILENCE_FRAMES = 8;         // ~1 秒静音触发发送
 const MAX_INTERVAL = 3000;        // 最长 3 秒也发送
+const TEXT_IDLE_TIMEOUT = 5000;   // textBuffer 空闲 5 秒自动作为 final 输出
 
 export class SpeechRecognitionService {
   private _isActive = false;
@@ -22,6 +23,7 @@ export class SpeechRecognitionService {
   private sendTimer: ReturnType<typeof setInterval> | null = null;
   private rate: number = 16000;
   private textBuffer = '';
+  private lastTextUpdate = 0;
 
   get isActive(): boolean { return this._isActive; }
   static isSupported(): boolean { return true; }
@@ -41,13 +43,27 @@ export class SpeechRecognitionService {
 
     this._isActive = true;
     this.onStatus?.('connected');
+    this.lastTextUpdate = Date.now();
     this.sendTimer = setInterval(() => this.checkInterval(), 500);
   }
 
   private checkInterval(): void {
     if (!this._isActive) return;
+
+    // 音频发送兜底
     if (Date.now() - this.lastSendTime > MAX_INTERVAL && this.audioChunks.length > 0) {
       this.flushAudio();
+    }
+
+    // textBuffer 空闲超时
+    if (
+      this.textBuffer.trim() &&
+      this.lastTextUpdate > 0 &&
+      Date.now() - this.lastTextUpdate > TEXT_IDLE_TIMEOUT
+    ) {
+      const text = this.textBuffer.trim();
+      this.textBuffer = '';
+      this.onResult?.({ type: 'final', text, timestamp: Date.now() });
     }
   }
 
@@ -75,6 +91,7 @@ export class SpeechRecognitionService {
   }
 
   private processText(newPunctuatedChunk: string): void {
+    this.lastTextUpdate = Date.now();
     // Append punctuated chunk to buffer
     this.textBuffer += (this.textBuffer ? ' ' : '') + newPunctuatedChunk;
 
