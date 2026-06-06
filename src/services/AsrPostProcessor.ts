@@ -1,19 +1,24 @@
 ﻿import type { LlmService } from "./LlmService";
 
 const SYSTEM_PROMPT =
-  "You are a speech recognition text reconstructor. Fix the following ASR output:\n\n" +
+  "You are a speech recognition text reconstructor. Fix ASR output:\n\n" +
   "RULES:\n" +
-  "- Merge any fragments into grammatically correct, fluent English sentences\n" +
+  "- Merge fragments into grammatically correct, fluent English sentences\n" +
   "- Fix homophone errors (their/there, to/too, its/it's, eye/I, seen/scene, etc.)\n" +
-  "- Remove filler numbers that are list markers, not part of speech\n" +
+  "- Remove filler numbers that are list markers\n" +
   "- Add proper punctuation and capitalization\n" +
-  "- Do NOT add or invent new content, only reconstruct what was said\n" +
-  "- If multiple sentence fragments obviously belong together, combine them\n" +
-  "- Return ONLY the corrected complete text, no explanations\n" +
-  "- If text is already perfect, return it unchanged\n" +
-  "\n" +
-  "IMPORTANT: Speech-to-text often breaks long sentences into fragments. " +
-  "You must look at the full input and reconstruct the most likely complete sentences.";
+  "- Do NOT add or invent new content\n" +
+  "- Return ONLY the corrected text, no explanations\n\n" +
+  "INCOMPLETE SENTENCES:\n" +
+  "- If the input is OBVIOUSLY cut off mid-sentence (ends with 'and', 'but', 'or', 'the', 'a', 'to', 'for', 'in', 'on', 'that', 'because', 'so', 'when', 'if', 'then', 'about'), append '...' to signal incompleteness\n" +
+  "- If the sentence appears to express a complete thought (has subject + verb + object/complement), do NOT add '...' even if it feels like more might follow\n" +
+  "- Simple greetings and short expressions ('thank you', 'hello', 'yes', 'I see') are complete, no '...'\n" +
+  "- If unsure, treat as complete (no '...')";
+
+export interface CorrectionResult {
+  text: string;
+  incomplete: boolean;
+}
 
 export class AsrPostProcessor {
   private llm: LlmService;
@@ -22,19 +27,23 @@ export class AsrPostProcessor {
     this.llm = llm;
   }
 
-  /** 纠正 ASR 文本 */
-  async correct(text: string): Promise<string> {
-    if (!text || text.length < 3) return text;
+  async correct(text: string): Promise<CorrectionResult> {
+    if (!text || text.length < 3) return { text, incomplete: false };
 
     try {
       const result = await this.llm.chat([
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: text },
       ]);
-      return result.trim() || text;
+      const corrected = result.trim() || text;
+      const incomplete = corrected.endsWith("...");
+      return {
+        text: incomplete ? corrected.slice(0, -3).trim() : corrected,
+        incomplete,
+      };
     } catch (e) {
-      console.warn("[AsrPostProcessor] LLM correction failed, using original:", e);
-      return text;
+      console.warn("[AsrPostProcessor] LLM correction failed:", e);
+      return { text, incomplete: false };
     }
   }
 

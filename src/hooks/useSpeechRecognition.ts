@@ -26,7 +26,8 @@ interface UseSpeechRecognitionReturn {
 
 const BUFFER_SIZE = 4096;
 const SAMPLE_RATE = 16000;
-const MERGE_WINDOW_MS = 1200;
+const MERGE_WINDOW_MS = 800;
+const MAX_MERGE_ROUNDS = 4;
 
 export function useSpeechRecognition(
   options: UseSpeechRecognitionOptions = {}
@@ -43,7 +44,6 @@ export function useSpeechRecognition(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  // 初始化翻译服务
   useEffect(() => {
     const strategy = getDefaultStrategy();
     createTranslationService({
@@ -62,27 +62,13 @@ export function useSpeechRecognition(
     const asr = new SpeechRecognitionService();
     captureRef.current = capture; asrRef.current = asr;
 
-    // 碎片缓冲 + 防抖合并
     const mergeBuffer: string[] = [];
     let mergeTimer: ReturnType<typeof setTimeout> | null = null;
     let lastMergeTimestamp = 0;
+    let previousIncomplete = "";
+    let mergeRounds = 0;
 
-    const flushMerged = async () => {
-      if (mergeBuffer.length === 0) return;
-      const combined = mergeBuffer.splice(0).join(" ");
-      if (!combined.trim()) return;
-
-      const timestamp = lastMergeTimestamp || Date.now();
-
-      // LLM 后处理
-      let sourceText = combined;
-      const processor = optionsRef.current.asrPostProcessor;
-      if (processor) {
-        try { sourceText = await processor.correct(combined); }
-        catch { /* fallback */ }
-      }
-
-      // 创建字幕
+    const emitSentence = (sourceText: string, timestamp: number) => {
       if (optionsRef.current.onFinalSentence) {
         const id = optionsRef.current.onFinalSentence(sourceText, timestamp);
         if (id && translateRef.current) {
@@ -112,6 +98,43 @@ export function useSpeechRecognition(
       }
     };
 
+    const flushMerged = async () => {
+      const fragments = mergeBuffer.splice(0);
+      if (fragments.length === 0 && !previousIncomplete) return;
+
+      const combined = previousIncomplete
+        ? previousIncomplete + " " + fragments.join(" ")
+        : fragments.join(" ");
+
+      if (!combined.trim()) return;
+
+      const timestamp = lastMergeTimestamp || Date.now();
+
+      let sourceText = combined;
+      let incomplete = false;
+      const processor = optionsRef.current.asrPostProcessor;
+      if (processor) {
+        try {
+          const result = await processor.correct(combined);
+          sourceText = result.text || combined;
+          incomplete = result.incomplete;
+        } catch { /* fallback */ }
+      }
+
+      if (incomplete && mergeRounds < MAX_MERGE_ROUNDS) {
+        // 句子不完整，保留等待下一批合并
+        previousIncomplete = sourceText;
+        mergeRounds++;
+      } else {
+        // 句子完整或达到最大轮数，发射
+        if (sourceText.trim()) {
+          emitSentence(sourceText.trim(), timestamp);
+        }
+        previousIncomplete = "";
+        mergeRounds = 0;
+      }
+    };
+
     try {
       await capture.start();
       capture.startRecording(SAMPLE_RATE, BUFFER_SIZE, (pcmData: Int16Array) => { asr.sendAudio(pcmData); });
@@ -124,7 +147,6 @@ export function useSpeechRecognition(
             setInterimText('');
             lastMergeTimestamp = result.timestamp;
 
-            // 防抖合并：把碎片加入缓冲，延迟 N ms 后一起处理
             mergeBuffer.push(result.text);
 
             if (mergeTimer) clearTimeout(mergeTimer);
@@ -136,10 +158,18 @@ export function useSpeechRecognition(
         },
         (err: string) => { console.error('[Hook] err:', err); setError(err); },
         () => {
-          // Stop: flush remaining buffer
           if (mergeTimer) clearTimeout(mergeTimer);
           mergeTimer = null;
-          flushMerged();
+          // 停止时强制发射（忽略 incomplete，直接输出）
+          const combined = previousIncomplete
+            ? previousIncomplete + " " + mergeBuffer.join(" ")
+            : mergeBuffer.join(" ");
+          if (combined.trim()) {
+            emitSentence(combined.trim(), lastMergeTimestamp || Date.now());
+          }
+          mergeBuffer.length = 0;
+          previousIncomplete = "";
+          mergeRounds = 0;
           setConnectionStatus('disconnected');
           setIsListening(false);
         },
