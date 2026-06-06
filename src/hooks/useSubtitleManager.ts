@@ -1,14 +1,14 @@
-import { useReducer, useCallback } from 'react';
-import type { SubtitleItem, SubtitleAction, SubtitleStatus } from '../types';
+﻿import { useReducer, useCallback } from "react";
+import type { SubtitleItem, SubtitleAction, SubtitleStatus } from "../types";
 
 function generateId(): string {
-  return 'sub_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
+  return "sub_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
 }
 
 const MAX_SUBTITLES = 500;
 
 export interface SubtitleChangeEvent {
-  type: 'added' | 'corrected' | 'marked' | 'cleared' | 'statusUpdated';
+  type: "added" | "corrected" | "marked" | "cleared" | "statusUpdated";
   id?: string;
   version?: number;
 }
@@ -20,19 +20,18 @@ interface SubtitleState {
 
 function subtitleReducer(state: SubtitleState, action: SubtitleAction): SubtitleState {
   switch (action.type) {
-    case 'add': {
+    case "add": {
       let items = [...state.items, action.item];
-      // 上限保护：超过 500 条删除最早条目
       if (items.length > MAX_SUBTITLES) {
         items = items.slice(items.length - MAX_SUBTITLES);
       }
       return {
         items,
-        lastEvents: [{ type: 'added', id: action.item.id }],
+        lastEvents: [{ type: "added", id: action.item.id }],
       };
     }
 
-    case 'correct': {
+    case "correct": {
       const items = state.items.map(s =>
         s.id === action.id
           ? { ...s, translatedText: action.newTranslatedText, version: s.version + 1 }
@@ -41,32 +40,49 @@ function subtitleReducer(state: SubtitleState, action: SubtitleAction): Subtitle
       const target = items.find(s => s.id === action.id);
       return {
         items,
-        lastEvents: [{ type: 'corrected', id: action.id, version: target?.version }],
+        lastEvents: [{ type: "corrected", id: action.id, version: target?.version }],
       };
     }
 
-    case 'toggleMark': {
+    case "toggleMark": {
       const items = state.items.map(s =>
         s.id === action.id ? { ...s, marked: !s.marked } : s
       );
       return {
         items,
-        lastEvents: [{ type: 'marked', id: action.id }],
+        lastEvents: [{ type: "marked", id: action.id }],
       };
     }
 
-    case 'updateStatus': {
+    case "updateStatus": {
       const items = state.items.map(s =>
         s.id === action.id ? { ...s, status: action.status } : s
       );
       return {
         items,
-        lastEvents: [{ type: 'statusUpdated', id: action.id }],
+        lastEvents: [{ type: "statusUpdated", id: action.id }],
       };
     }
 
-    case 'clear':
-      return { items: [], lastEvents: [{ type: 'cleared' }] };
+    case "edit": {
+      const editItems = state.items.map(s =>
+        s.id === action.id
+          ? {
+              ...s,
+              ...(action.sourceText !== undefined ? { sourceText: action.sourceText } : {}),
+              ...(action.translatedText !== undefined ? { translatedText: action.translatedText } : {}),
+              version: s.version + 1,
+            }
+          : s
+      );
+      return {
+        items: editItems,
+        lastEvents: [{ type: "corrected", id: action.id }],
+      };
+    }
+
+    case "clear":
+      return { items: [], lastEvents: [{ type: "cleared" }] };
 
     default:
       return state;
@@ -85,6 +101,7 @@ export interface SubtitleManager {
   toggleMark: (id: string) => void;
   updateStatus: (id: string, status: SubtitleStatus) => void;
   clearSubtitles: () => void;
+  editSubtitle: (id: string, sourceText?: string, translatedText?: string) => void;
 }
 
 export function useSubtitleManager(): SubtitleManager {
@@ -97,7 +114,7 @@ export function useSubtitleManager(): SubtitleManager {
     (
       sourceText: string,
       translatedText: string,
-      status: SubtitleStatus = 'final'
+      status: SubtitleStatus = "final"
     ): string => {
       const id = generateId();
       const item: SubtitleItem = {
@@ -109,27 +126,34 @@ export function useSubtitleManager(): SubtitleManager {
         version: 0,
         status,
       };
-      dispatch({ type: 'add', item });
+      dispatch({ type: "add", item });
       return id;
     },
     []
   );
 
   const correctSubtitle = useCallback((id: string, newTranslatedText: string) => {
-    dispatch({ type: 'correct', id, newTranslatedText });
+    dispatch({ type: "correct", id, newTranslatedText });
   }, []);
 
   const toggleMark = useCallback((id: string) => {
-    dispatch({ type: 'toggleMark', id });
+    dispatch({ type: "toggleMark", id });
   }, []);
 
   const updateStatus = useCallback((id: string, status: SubtitleStatus) => {
-    dispatch({ type: 'updateStatus', id, status });
+    dispatch({ type: "updateStatus", id, status });
   }, []);
 
   const clearSubtitles = useCallback(() => {
-    dispatch({ type: 'clear' });
+    dispatch({ type: "clear" });
   }, []);
+
+  const editSubtitle = useCallback(
+    (id: string, sourceText?: string, translatedText?: string) => {
+      dispatch({ type: "edit", id, sourceText, translatedText });
+    },
+    []
+  );
 
   return {
     items: state.items,
@@ -139,5 +163,6 @@ export function useSubtitleManager(): SubtitleManager {
     toggleMark,
     updateStatus,
     clearSubtitles,
+    editSubtitle,
   };
 }

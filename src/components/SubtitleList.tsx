@@ -6,6 +6,7 @@ import { lookupWord } from "../services/MockTranslationService";
 import { fetchWordDefinition } from "../services/DictionaryService";
 import { SubtitleItem } from "./SubtitleItem";
 import { WordPopover } from "./WordPopover";
+import type { TranslationService } from "../types";
 
 interface SubtitleListProps {
   interimText: string;
@@ -14,10 +15,24 @@ interface SubtitleListProps {
 
 export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { items, toggleMark } = useSubtitleContext();
+  const { items, toggleMark, editSubtitle } = useSubtitleContext();
   const { state, openWord, updateDefinition, closePopover } = useWordPopover();
+  const translateRef = useRef<TranslationService | null>(null);
 
   const { isPaused, scrollToBottom } = useAutoScroll(containerRef, items.length);
+
+  const getTranslator = useCallback(async (): Promise<TranslationService> => {
+    if (!translateRef.current) {
+      const { createTranslationService, getDefaultStrategy } = await import(
+        "../services/TranslationService"
+      );
+      const strategy = getDefaultStrategy();
+      translateRef.current = await createTranslationService({
+        strategy,
+      });
+    }
+    return translateRef.current;
+  }, []);
 
   const handleWordClick = useCallback(
     (word: string, rect: DOMRect) => {
@@ -38,6 +53,26 @@ export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
     [openWord, updateDefinition]
   );
 
+  const handleEdit = useCallback(
+    (id: string, sourceText?: string, translatedText?: string) => {
+      editSubtitle(id, sourceText, translatedText);
+    },
+    [editSubtitle]
+  );
+
+  const handleRetranslate = useCallback(
+    async (id: string, sourceText: string) => {
+      try {
+        const translator = await getTranslator();
+        const translatedText = await translator.translate(sourceText);
+        editSubtitle(id, undefined, translatedText);
+      } catch {
+        editSubtitle(id, undefined, "翻译失败");
+      }
+    },
+    [editSubtitle, getTranslator]
+  );
+
   return (
     <div className="relative flex-1 overflow-hidden">
       <div
@@ -52,6 +87,8 @@ export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
             key={item.id}
             item={item}
             onToggleMark={toggleMark}
+            onEdit={handleEdit}
+            onRetranslate={handleRetranslate}
             onWordClick={handleWordClick}
           />
         ))}
