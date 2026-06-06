@@ -8,15 +8,13 @@ exports.handler = async (event) => {
     if (!apiKey || !secretKey) throw new Error("Missing Baidu API credentials");
 
     // Get token
-    const tokenParams = new URLSearchParams({ grant_type: "client_credentials", client_id: apiKey, client_secret: secretKey });
-    const tokenRes = await fetch("https://aip.baidubce.com/oauth/2.0/token?" + tokenParams.toString(), { method: "POST" });
-    const tokenData = await tokenRes.json();
-    const token = tokenData.access_token;
-    if (!token) throw new Error("Token failed: " + JSON.stringify(tokenData));
+    const params = new URLSearchParams({ grant_type: "client_credentials", client_id: apiKey, client_secret: secretKey });
+    const tokenRes = await fetch("https://aip.baidubce.com/oauth/2.0/token?" + params.toString(), { method: "POST" });
+    const token = (await tokenRes.json()).access_token;
+    if (!token) throw new Error("Token acquisition failed");
 
-    // Decode base64 audio
-    const { audio } = JSON.parse(event.body);
-    const body = Buffer.from(audio, "base64");
+    // Decode audio (Netlify base64-encodes binary body)
+    const body = Buffer.from(event.body, "base64");
     const rate = event.headers["x-audio-rate"] || "16000";
 
     const url = "https://vop.baidu.com/server_api?" + new URLSearchParams({
