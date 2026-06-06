@@ -1,6 +1,34 @@
 ﻿import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { createHash } from "crypto";
+
+function loadEnvFromFile(): Record<string, string> {
+  const root = process.cwd();
+  const envPath = resolve(root, ".env");
+  const env: Record<string, string> = {};
+  try {
+    const content = readFileSync(envPath, "utf-8");
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx === -1) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim();
+      env[key] = val;
+      if (!process.env[key]) process.env[key] = val;
+    }
+    console.log("[vite] Loaded env keys:", Object.keys(env).filter(k => !k.startsWith("VITE_")).join(", "));
+  } catch (e) {
+    console.warn("[vite] Failed to load .env:", e);
+  }
+  return env;
+}
+
+const LOCAL_ENV = loadEnvFromFile();
 
 const API_KEY = "hQaxRjnhJ6wean4FCAqdSP84";
 const SECRET_KEY = "vOFTi1baGB3cmDpynsXfK4d9HdLFgy08";
@@ -24,6 +52,14 @@ async function getToken(): Promise<string> {
   cachedToken = data.access_token;
   tokenExpiry = Date.now() + (data.expires_in || 2592000) * 1000;
   return cachedToken;
+}
+
+/** 百度翻译 API sign 算法 */
+function baiduTranslateSign(q: string, salt: string): string {
+  const appid = process.env.BAIDU_APP_ID || LOCAL_ENV.BAIDU_APP_ID || "";
+  const key = process.env.BAIDU_TRANSLATE_SECRET_KEY || LOCAL_ENV.BAIDU_TRANSLATE_SECRET_KEY || "";
+  const raw = appid + q + salt + key;
+  return createHash("md5").update(raw).digest("hex");
 }
 
 function baiduApiPlugin() {
@@ -75,6 +111,50 @@ function baiduApiPlugin() {
           res.end(JSON.stringify({ error: err.message }));
         }
       });
+
+      // 百度翻译 API 代理
+      server.middlewares.use("/api/baidu-translate", async (req: any, res: any) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end(JSON.stringify({ error: "Method not allowed" }));
+          return;
+        }
+
+        try {
+          const chunks: Buffer[] = [];
+          req.on("data", (c: Buffer) => chunks.push(c));
+          await new Promise((r) => req.on("end", r));
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          const { q, from, to } = body;
+
+          const appid = process.env.BAIDU_APP_ID || LOCAL_ENV.BAIDU_APP_ID;
+          const salt = String(Date.now());
+          const sign = baiduTranslateSign(q, salt);
+
+          const params = new URLSearchParams({
+            q, from: from || "en", to: to || "zh",
+            appid: appid || "",
+            salt,
+            sign,
+          });
+
+          const resp = await fetch(
+            "https://fanyi-api.baidu.com/api/trans/vip/translate",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: params.toString(),
+            }
+          );
+
+          const data = await resp.json();
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify(data));
+        } catch (err: any) {
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error_code: -1, error_msg: "Proxy: " + err.message }));
+        }
+      });
     },
   };
 }
@@ -90,7 +170,7 @@ function deepseekApiPlugin() {
           return;
         }
 
-        const apiKey = process.env.DEEPSEEK_API_KEY;
+        const apiKey = process.env.DEEPSEEK_API_KEY || LOCAL_ENV.DEEPSEEK_API_KEY;
         if (!apiKey) {
           res.statusCode = 500;
           res.end(JSON.stringify({ error: "DEEPSEEK_API_KEY not configured" }));

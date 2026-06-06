@@ -1,19 +1,20 @@
 ﻿import type { LlmService } from "./LlmService";
 
 const SYSTEM_PROMPT =
-  "You are an English text corrector. Fix speech recognition errors:\n" +
-  "- Fix homophone errors (e.g. 'their'→'there', 'to'→'too', 'its'→'it\\'s')\n" +
-  "- Fix obvious misspellings and grammar breaks\n" +
-  "- Add missing punctuation (periods, commas) where natural\n" +
-  "- Capitalize proper nouns and sentence starts\n" +
-  "- Do NOT change word choice or meaning\n" +
-  "- Do NOT add articles or prepositions that change intent\n" +
-  "- Return ONLY the corrected text, no explanation\n" +
-  "- If the text is already perfect, return it unchanged";
+  "You are a speech recognition text reconstructor. Fix the following ASR output:\n\n" +
+  "RULES:\n" +
+  "- Merge any fragments into grammatically correct, fluent English sentences\n" +
+  "- Fix homophone errors (their/there, to/too, its/it's, eye/I, seen/scene, etc.)\n" +
+  "- Remove filler numbers that are list markers, not part of speech\n" +
+  "- Add proper punctuation and capitalization\n" +
+  "- Do NOT add or invent new content, only reconstruct what was said\n" +
+  "- If multiple sentence fragments obviously belong together, combine them\n" +
+  "- Return ONLY the corrected complete text, no explanations\n" +
+  "- If text is already perfect, return it unchanged\n" +
+  "\n" +
+  "IMPORTANT: Speech-to-text often breaks long sentences into fragments. " +
+  "You must look at the full input and reconstruct the most likely complete sentences.";
 
-/**
- * ASR 后处理器 — 用 LLM 清洗语音识别文本
- */
 export class AsrPostProcessor {
   private llm: LlmService;
 
@@ -21,7 +22,7 @@ export class AsrPostProcessor {
     this.llm = llm;
   }
 
-  /** 纠正 ASR 识别错误，返回清洗后的文本 */
+  /** 纠正 ASR 文本 */
   async correct(text: string): Promise<string> {
     if (!text || text.length < 3) return text;
 
@@ -33,7 +34,9 @@ export class AsrPostProcessor {
       return result.trim() || text;
     } catch (e) {
       console.warn("[AsrPostProcessor] LLM correction failed, using original:", e);
-      return text; // 兜底：返回原文
+      return text;
     }
   }
+
+  reset(): void {}
 }
