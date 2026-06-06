@@ -108,7 +108,7 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
       elements.push(
         <span
           key={"w-" + seg.index}
-          className="cursor-pointer text-blue-500 hover:text-blue-700 hover:underline decoration-dotted underline-offset-2 transition-colors"
+          className="cursor-pointer text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline decoration-dotted underline-offset-2 transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -151,34 +151,34 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
       return (
         <>
           {item.corrected && (
-            <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 mr-1" title="根据后文自动修正">
+            <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400 mr-1" title="根据后文自动修正">
               <span className="text-[10px]">✨</span>
             </span>
           )}
           {item.translatedText}
           {item.version > 0 && (
-            <span className="text-xs text-slate-300 ml-1">v{item.version + 1}</span>
+            <span className="text-xs text-stone-300 dark:text-stone-600 ml-1">v{item.version + 1}</span>
           )}
         </>
       );
     }
 
-    return <span className="text-slate-300 text-xs animate-pulse">翻译中...</span>;
+    return <span className="text-stone-300 dark:text-stone-600 text-xs animate-pulse">翻译中...</span>;
   };
 
   // 确定边框样式
   const getBorderClass = () => {
-    if (edited) return " border-blue-400 border-dashed";
-    if (item.corrected) return " border-emerald-400 border-l-4";
-    if (item.marked) return " border-yellow-300";
-    return " border-slate-100";
+    if (edited) return " border-indigo-400 dark:border-indigo-500 border-dashed";
+    if (item.corrected) return " border-emerald-400 dark:border-emerald-600 border-l-4";
+    if (item.marked) return " border-amber-300 dark:border-amber-600";
+    return " border-stone-100 dark:border-stone-800";
   };
 
   return (
     <div
       className={
-        "group p-3 bg-white rounded-lg border shadow-sm cursor-pointer " +
-        "hover:border-yellow-300 transition-colors duration-200 " +
+        "group p-3 bg-white dark:bg-stone-900 rounded-xl border shadow-sm dark:shadow-none cursor-pointer " +
+        "hover:border-indigo-200 dark:hover:border-indigo-700 transition-colors duration-200 " +
         "opacity-0 translate-y-2.5 " +
         (visible ? "opacity-100 translate-y-0 duration-[200ms] ease-out" : "") +
         getBorderClass()
@@ -189,27 +189,27 @@ function SubtitleItemInner({ item, onToggleMark, onEdit, onRetranslate, onWordCl
         {item.marked && <span className="text-yellow-400 text-sm mt-0.5 shrink-0">&#9733;</span>}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-slate-800 text-sm leading-relaxed break-words flex-1">
+            <p className="text-stone-800 dark:text-stone-200 text-sm leading-relaxed break-words flex-1">
               {renderSourceText()}
             </p>
             {editing !== "source" && (
               <button
                 onClick={(e) => handleStartEdit("source", e)}
-                className="text-xs text-slate-300 hover:text-slate-500 transition-colors cursor-pointer shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
+                className="text-xs text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-300 transition-colors cursor-pointer shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
                 title="编辑原文"
               >
                 ✎
               </button>
             )}
           </div>
-          <div className="flex items-start justify-between gap-2 mt-1 pt-1 border-t border-slate-100">
-            <p className="text-blue-600 text-sm leading-relaxed break-words flex-1">
+          <div className="flex items-start justify-between gap-2 mt-1 pt-1 border-t border-stone-100 dark:border-stone-800 dark:border-slate-700">
+            <p className="text-indigo-600 dark:text-indigo-400 text-sm leading-relaxed break-words flex-1">
               {renderTranslatedText()}
             </p>
             {editing !== "translated" && (
               <button
                 onClick={(e) => handleStartEdit("translated", e)}
-                className="text-xs text-slate-300 hover:text-slate-500 transition-colors cursor-pointer shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
+                className="text-xs text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-300 transition-colors cursor-pointer shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
                 title="编辑译文"
               >
                 ✎

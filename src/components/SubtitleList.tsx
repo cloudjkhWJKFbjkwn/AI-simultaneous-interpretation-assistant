@@ -79,7 +79,7 @@ export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
         ref={containerRef}
         className={
           "h-full overflow-y-auto scroll-smooth px-6 py-4 space-y-3 " +
-          (transparent ? "" : "bg-slate-50")
+          (transparent ? "" : "bg-stone-50 dark:bg-stone-950")
         }
       >
         {items.map(item => (
@@ -95,7 +95,7 @@ export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
 
         {interimText && (
           <div className="p-3 bg-white/10 rounded-lg border border-blue-200/30 shadow-sm opacity-70">
-            <p className={transparent ? "text-white/60 text-sm italic" : "text-slate-500 text-sm italic"}>
+            <p className={transparent ? "text-white/60 text-sm italic" : "text-stone-400 dark:text-stone-500 text-sm italic"}>
               {interimText}
             </p>
           </div>
@@ -105,7 +105,7 @@ export function SubtitleList({ interimText, transparent }: SubtitleListProps) {
       {isPaused && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur border border-slate-200 shadow-lg flex items-center justify-center text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-all cursor-pointer animate-bounce"
+          className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 dark:bg-stone-900/90 backdrop-blur border border-stone-200 dark:border-stone-700 shadow-lg flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-200 hover:border-stone-300 dark:hover:border-stone-500 transition-all cursor-pointer animate-bounce"
           title="回到底部"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
