@@ -1,6 +1,9 @@
 ﻿{
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/" },
+    { "source": "/api/baidu-asr", "destination": "/api/baidu-asr" },
+    { "source": "/api/baidu-translate", "destination": "/api/baidu-translate" },
+    { "source": "/api/baidu-token", "destination": "/api/baidu-token" },
+    { "source": "/api/deepseek", "destination": "/api/deepseek" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
