@@ -2,7 +2,7 @@
 import { useSubtitleContext } from "../context/SubtitleContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useWordPopover } from "../hooks/useWordPopover";
-import { MockTranslationService } from "../services/MockTranslationService";
+import { lookupWord } from "../services/MockTranslationService";
 import { SubtitleItem } from "./SubtitleItem";
 import { WordPopover } from "./WordPopover";
 
@@ -19,7 +19,7 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
 
   const handleWordClick = useCallback(
     (word: string, rect: DOMRect) => {
-      const def = MockTranslationService.lookupWord(word);
+      const def = lookupWord(word);
       openWord(word, def || "暂无释义", rect);
     },
     [openWord]

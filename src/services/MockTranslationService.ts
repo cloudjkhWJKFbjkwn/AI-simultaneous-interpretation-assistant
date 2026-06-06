@@ -1,13 +1,6 @@
 ﻿import type { TranslationService } from "../types";
 
-/**
- * Mock 翻译策略 — 本地词典映射，无需网络
- *
- * 覆盖 200+ 常用英文词汇/短语/句型 → 中文翻译
- * 未匹配词汇原样返回并标记 [未翻译]
- */
 const DICTIONARY: Record<string, string> = {
-  // === 日常问候与礼貌用语 ===
   hello: "你好",
   hi: "嗨",
   hey: "嘿",
@@ -29,8 +22,6 @@ const DICTIONARY: Record<string, string> = {
   please: "请",
   "yes please": "好的，谢谢",
   "no thank you": "不用了，谢谢",
-
-  // === 人称代词 ===
   i: "我",
   you: "你",
   he: "他",
@@ -55,8 +46,6 @@ const DICTIONARY: Record<string, string> = {
   himself: "他自己",
   herself: "她自己",
   itself: "它自己",
-
-  // === 基础动词 ===
   be: "是",
   am: "是",
   is: "是",
@@ -117,9 +106,15 @@ const DICTIONARY: Record<string, string> = {
   live: "生活",
   believe: "相信",
   happen: "发生",
-
-  // === 认知与对话动词 ===
   understand: "理解",
+  "i'm": "我是",
+  "don't": "不",
+  "doesn't": "不",
+  "didn't": "没有",
+  "wasn't": "不是",
+  "weren't": "不是",
+  "hasn't": "没有",
+  "haven't": "没有",
   remember: "记住",
   forget: "忘记",
   explain: "解释",
@@ -142,8 +137,6 @@ const DICTIONARY: Record<string, string> = {
   "wait for": "等待",
   "focus on": "专注于",
   "work on": "做……工作",
-
-  // === 高频连接词 ===
   and: "和",
   but: "但是",
   or: "或者",
@@ -179,8 +172,6 @@ const DICTIONARY: Record<string, string> = {
   "of course": "当然",
   "in fact": "事实上",
   "for example": "例如",
-
-  // === 时间 ===
   now: "现在",
   today: "今天",
   tomorrow: "明天",
@@ -199,8 +190,6 @@ const DICTIONARY: Record<string, string> = {
   first: "首先",
   second: "第二",
   third: "第三",
-
-  // === 频率与程度 ===
   more: "更多",
   less: "更少",
   most: "大多数",
@@ -216,8 +205,6 @@ const DICTIONARY: Record<string, string> = {
   quite: "相当",
   rather: "相当",
   even: "甚至",
-
-  // === 地点与方向 ===
   here: "这里",
   there: "那里",
   where: "哪里",
@@ -234,8 +221,6 @@ const DICTIONARY: Record<string, string> = {
   "on top of": "在……上面",
   "at the end": "在最后",
   "at the beginning": "在开始时",
-
-  // === 技术词汇 ===
   code: "代码",
   data: "数据",
   system: "系统",
@@ -298,8 +283,6 @@ const DICTIONARY: Record<string, string> = {
   github: "GitHub",
   docker: "Docker",
   kubernetes: "Kubernetes",
-
-  // === 句型与模板 ===
   "i think": "我认为",
   "i believe": "我相信",
   "i feel": "我感觉",
@@ -366,8 +349,6 @@ const DICTIONARY: Record<string, string> = {
   "as a result": "因此",
   "for this reason": "出于这个原因",
   "in conclusion": "总之",
-
-  // === 形容词 ===
   good: "好",
   bad: "坏",
   great: "很棒",
@@ -411,8 +392,6 @@ const DICTIONARY: Record<string, string> = {
   common: "常见",
   special: "特殊",
   specific: "具体的",
-
-  // === 名词 ===
   time: "时间",
   year: "年",
   day: "天",
@@ -434,27 +413,10 @@ const DICTIONARY: Record<string, string> = {
   story: "故事",
   point: "点",
   moment: "时刻",
-  "kind of": "有点",
-  "sort of": "有点",
-  "a bit": "一点",
-  "a little bit": "一点点",
-  "a couple of": "几个",
-  "lots of": "许多",
-  "plenty of": "大量的",
-  "all of": "所有的",
-  "most of": "大部分",
-  "some of": "一些",
-  "none of": "没有一个",
-  "each of": "每个",
-  "one of": "其中之一",
-  "part of": "一部分",
-
-  // === 会议与演讲场景 ===
-  presentation: "演讲",
+  presentation: "演示",
   meeting: "会议",
   conference: "大会",
   talk: "谈话",
-  presentation: "演示",
   slide: "幻灯片",
   topic: "主题",
   agenda: "议程",
@@ -477,8 +439,6 @@ const DICTIONARY: Record<string, string> = {
   "let me demonstrate": "让我演示",
   "thank you for listening": "谢谢聆听",
   "any questions": "有问题吗",
-
-  // === 数字 ===
   one: "一",
   two: "二",
   three: "三",
@@ -493,15 +453,11 @@ const DICTIONARY: Record<string, string> = {
   thousand: "千",
   million: "百万",
   billion: "十亿",
-  first: "第一",
-  second: "第二",
-  third: "第三",
   last: "最后",
   next: "下一个",
   previous: "上一个",
 };
 
-/** 按长度降序排列的词典键，用于贪婪最长匹配 */
 const SORTED_KEYS = Object.keys(DICTIONARY).sort((a, b) => b.length - a.length);
 
 function normalize(text: string): string {
@@ -516,18 +472,18 @@ function translateWord(w: string): string {
   return DICTIONARY[w.toLowerCase()] || "[未翻译: " + w + "]";
 }
 
+/**
+ * Look up a single word in the dictionary.
+ * Returns the Chinese definition or null if not found.
+ */
+export function lookupWord(word: string): string | null {
+  const key = word.toLowerCase().replace(/[,.!?;:''''()\[\]{}]/g, "").trim();
+  if (!key) return null;
+  return DICTIONARY[key] || null;
+}
+
 export class MockTranslationService implements TranslationService {
-  /**
-   * 查询单个单词的中文释义
-   * Returns null if the word is not found in the dictionary
-   */
-  static lookupWord(word: string): string | null {
-    const key = word.toLowerCase().replace(/[,.!?;:''''()\[\]{}]/g, "").trim();
-    if (!key) return null;
-    // Try exact match first, then check multi-word phrases starting with this word
-    if (DICTIONARY[key]) return DICTIONARY[key];
-    return null;
-  }
+  static lookupWord = lookupWord;
 
   async translate(text: string): Promise<string> {
     if (!text || text.trim().length === 0) return "";
@@ -535,19 +491,16 @@ export class MockTranslationService implements TranslationService {
     const normalized = normalize(text);
     if (!normalized) return text;
 
-    // 先尝试完整短语匹配
     if (DICTIONARY[normalized]) {
       return DICTIONARY[normalized];
     }
 
-    // 贪婪最长子串匹配（由长到短替换）
     let result = normalized;
     const used = new Set<number>();
 
     for (const key of SORTED_KEYS) {
       let idx = result.indexOf(key);
       while (idx !== -1) {
-        // 检查是否被之前的匹配覆盖
         let overlaps = false;
         for (let j = idx; j < idx + key.length; j++) {
           if (used.has(j)) {
@@ -566,10 +519,8 @@ export class MockTranslationService implements TranslationService {
       }
     }
 
-    // 逐词翻译剩余未匹配部分
     const words = result.split(/\s+/);
     const translated = words.map((w) => {
-      // 跳过已有中文
       if (/[\u4e00-\u9fff]/.test(w)) return w;
       return translateWord(w);
     });
