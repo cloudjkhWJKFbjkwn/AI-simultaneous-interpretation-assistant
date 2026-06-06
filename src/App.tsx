@@ -107,8 +107,8 @@ function AppInner() {
       return;
     }
 
-    const w = 700;
-    const h = 140;
+    const w = 500;
+    const h = 200;
     const left = Math.round((window.screen.availWidth - w) / 2);
     const top = window.screen.availHeight - h - 40;
 
@@ -228,3 +228,6 @@ function App() {
 }
 
 export default App;
+
+
+
