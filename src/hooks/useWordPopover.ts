@@ -5,11 +5,13 @@ export interface WordPopoverState {
   definition: string;
   anchorRect: DOMRect | null;
   isOpen: boolean;
+  loading: boolean;
 }
 
 export interface UseWordPopoverReturn {
   state: WordPopoverState;
-  openWord: (word: string, definition: string, rect: DOMRect) => void;
+  openWord: (word: string, rect: DOMRect) => void;
+  updateDefinition: (definition: string) => void;
   closePopover: () => void;
 }
 
@@ -19,14 +21,19 @@ export function useWordPopover(): UseWordPopoverReturn {
     definition: "",
     anchorRect: null,
     isOpen: false,
+    loading: false,
   });
 
   const openWord = useCallback(
-    (word: string, definition: string, rect: DOMRect) => {
-      setState({ word, definition, anchorRect: rect, isOpen: true });
+    (word: string, rect: DOMRect) => {
+      setState({ word, definition: "", anchorRect: rect, isOpen: true, loading: true });
     },
     []
   );
+
+  const updateDefinition = useCallback((definition: string) => {
+    setState(prev => ({ ...prev, definition, loading: false }));
+  }, []);
 
   const closePopover = useCallback(() => {
     setState(prev => ({ ...prev, isOpen: false }));
@@ -42,5 +49,5 @@ export function useWordPopover(): UseWordPopoverReturn {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [state.isOpen, closePopover]);
 
-  return { state, openWord, closePopover };
+  return { state, openWord, updateDefinition, closePopover };
 }

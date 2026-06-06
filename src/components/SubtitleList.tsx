@@ -3,6 +3,7 @@ import { useSubtitleContext } from "../context/SubtitleContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import { useWordPopover } from "../hooks/useWordPopover";
 import { lookupWord } from "../services/MockTranslationService";
+import { fetchWordDefinition } from "../services/DictionaryService";
 import { SubtitleItem } from "./SubtitleItem";
 import { WordPopover } from "./WordPopover";
 
@@ -13,16 +14,27 @@ interface SubtitleListProps {
 export function SubtitleList({ interimText }: SubtitleListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { items, toggleMark } = useSubtitleContext();
-  const { state, openWord, closePopover } = useWordPopover();
+  const { state, openWord, updateDefinition, closePopover } = useWordPopover();
 
   const { isPaused, scrollToBottom } = useAutoScroll(containerRef, items.length);
 
   const handleWordClick = useCallback(
     (word: string, rect: DOMRect) => {
-      const def = lookupWord(word);
-      openWord(word, def || "暂无释义", rect);
+      // Open popover immediately (loading state)
+      openWord(word, rect);
+
+      // Check local dictionary first
+      const localDef = lookupWord(word);
+      if (localDef) {
+        updateDefinition(localDef);
+      } else {
+        // Fall back to online dictionary API
+        fetchWordDefinition(word).then(def => {
+          updateDefinition(def || "暂无释义");
+        });
+      }
     },
-    [openWord]
+    [openWord, updateDefinition]
   );
 
   return (
@@ -64,6 +76,7 @@ export function SubtitleList({ interimText }: SubtitleListProps) {
         definition={state.definition}
         anchorRect={state.anchorRect}
         isOpen={state.isOpen}
+        loading={state.loading}
         onClose={closePopover}
       />
     </div>

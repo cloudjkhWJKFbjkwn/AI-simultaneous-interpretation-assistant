@@ -6,6 +6,7 @@ interface WordPopoverProps {
   definition: string;
   anchorRect: DOMRect | null;
   isOpen: boolean;
+  loading: boolean;
   onClose: () => void;
 }
 
@@ -16,16 +17,13 @@ function getPosition(
   popoverHeight: number
 ): { left: number; top: number } {
   const gap = 8;
-  // Default: above the word, centered horizontally
   let left = anchorRect.left + anchorRect.width / 2 - popoverWidth / 2;
   let top = anchorRect.top - popoverHeight - gap;
 
-  // If it would go above the viewport, show below instead
   if (top < 8) {
     top = anchorRect.bottom + gap;
   }
 
-  // Clamp horizontally to viewport
   if (left < 8) left = 8;
   if (left + popoverWidth > window.innerWidth - 8) {
     left = window.innerWidth - popoverWidth - 8;
@@ -34,7 +32,7 @@ function getPosition(
   return { left, top };
 }
 
-export function WordPopover({ word, definition, anchorRect, isOpen, onClose }: WordPopoverProps) {
+export function WordPopover({ word, definition, anchorRect, isOpen, loading, onClose }: WordPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 200, height: 60 });
 
@@ -47,7 +45,7 @@ export function WordPopover({ word, definition, anchorRect, isOpen, onClose }: W
     if (rect.width > 0 && rect.height > 0) {
       setSize({ width: rect.width, height: rect.height });
     }
-  }, [isOpen, word]);
+  }, [isOpen, word, definition, loading]);
 
   // Close on click outside
   useEffect(() => {
@@ -57,7 +55,6 @@ export function WordPopover({ word, definition, anchorRect, isOpen, onClose }: W
         onClose();
       }
     };
-    // Delay to avoid the same click that opened it
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handler);
     }, 0);
@@ -74,11 +71,18 @@ export function WordPopover({ word, definition, anchorRect, isOpen, onClose }: W
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-xl px-3 py-2 max-w-[260px]"
+      className="fixed z-50 bg-white border border-slate-200 rounded-lg shadow-xl px-3 py-2 max-w-[280px] min-w-[120px]"
       style={{ left, top }}
     >
       <p className="text-xs text-slate-400 font-mono mb-1">{word}</p>
-      <p className="text-sm text-slate-700 font-medium">{definition}</p>
+      {loading ? (
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-slate-400">查询中...</p>
+        </div>
+      ) : (
+        <p className="text-sm text-slate-700 font-medium whitespace-pre-line">{definition}</p>
+      )}
     </div>,
     document.body
   );
