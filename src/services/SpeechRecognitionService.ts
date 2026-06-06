@@ -105,8 +105,17 @@ export class SpeechRecognitionService {
     for (const c of chunks) { combined.set(c, off); off += c.length; }
 
     try {
+      
+      // Encode audio as base64 for reliable cross-platform transfer
+      const bytes = new Uint8Array(combined.buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+
       const r = await fetch("/api/baidu-asr", {
-        method: "POST", headers: { "X-Audio-Rate": String(this.rate) }, body: combined.buffer,
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Audio-Rate": String(this.rate) },
+        body: JSON.stringify({ audio: base64 }),
       });
       const d = await r.json() as any;
       if (d.err_no === 0 && d.result?.length > 0) {
