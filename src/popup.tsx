@@ -11,17 +11,25 @@ export function PopupApp() {
   const [interimText, setInterimText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const controlChannelRef = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
     const syncChannel = new BroadcastChannel("subtitle-sync");
     const interimChannel = new BroadcastChannel("subtitle-interim");
-    const controlChannel = new BroadcastChannel("subtitle-control");
+
+    // Create stable control channel
+    controlChannelRef.current = new BroadcastChannel("subtitle-control");
+    const ctrlChannel = controlChannelRef.current;
+    ctrlChannel.onmessage = (e) => {
+      if (e.data?.type === "status") {
+        setIsListening(e.data.isListening || false);
+      }
+    };
 
     syncChannel.onmessage = (e) => {
       const msg = e.data;
       if (msg.type === "sync") {
         setItems(msg.items);
-        setIsListening(msg.isListening || false);
       }
     };
 
@@ -31,20 +39,14 @@ export function PopupApp() {
       }
     };
 
-    controlChannel.onmessage = (e) => {
-      if (e.data?.type === "status") {
-        setIsListening(e.data.isListening || false);
-      }
-    };
-
     return () => {
       syncChannel.close();
       interimChannel.close();
-      controlChannel.close();
+      ctrlChannel.close();
+      controlChannelRef.current = null;
     };
   }, []);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     const el = containerRef.current;
     if (el) {
@@ -53,17 +55,15 @@ export function PopupApp() {
   }, [items, interimText]);
 
   const handleToggle = () => {
-    const controlChannel = new BroadcastChannel("subtitle-control");
-    controlChannel.postMessage({ type: "toggle" });
-    controlChannel.close();
+    if (controlChannelRef.current) {
+      controlChannelRef.current.postMessage({ type: "toggle" });
+    }
   };
 
-  // Show the latest 2 items
   const visibleItems = items.slice(-2);
 
   return (
     <div className="h-screen bg-black/80 backdrop-blur-md text-white flex flex-col select-none">
-      {/* Subtitle content area */}
       <div className="flex-1 flex flex-col justify-end px-4 pb-2">
         <div ref={containerRef} className="space-y-1">
           {visibleItems.length === 0 && !interimText ? (
@@ -89,7 +89,6 @@ export function PopupApp() {
         </div>
       </div>
 
-      {/* Bottom bar: start/stop + status */}
       <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-t border-white/10 shrink-0">
         <span className="text-white/50 text-xs">🎙️ AI 同传</span>
         <button

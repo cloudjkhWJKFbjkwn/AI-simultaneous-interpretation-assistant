@@ -24,7 +24,10 @@ function AppInner() {
   const { items, addSubtitle, correctSubtitle, clearSubtitles } = useSubtitleContext();
   const popupRef = useRef<Window | null>(null);
   const interimChannelRef = useRef<BroadcastChannel | null>(null);
-  const statusChannelRef = useRef<BroadcastChannel | null>(null);
+  const controlChannelRef = useRef<BroadcastChannel | null>(null);
+  const isListeningRef = useRef(false);
+  const startRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const stopRef = useRef<() => void>(() => {});
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
@@ -47,32 +50,50 @@ function AppInner() {
 
   const [statusMsg, setStatusMsg] = useState("");
 
+  // Keep refs in sync
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+  useEffect(() => { startRef.current = start; }, [start]);
+  useEffect(() => { stopRef.current = stop; }, [stop]);
+
   // Broadcast interim text to popup
   useEffect(() => {
     if (!interimChannelRef.current) return;
     interimChannelRef.current.postMessage({ type: "interim", text: interimText });
   }, [interimText]);
 
-  // Broadcast listening status to popup
+  // Broadcast listening status to popup whenever it changes
   useEffect(() => {
-    if (!statusChannelRef.current) return;
-    statusChannelRef.current.postMessage({ type: "status", isListening });
+    if (!controlChannelRef.current) return;
+    controlChannelRef.current.postMessage({ type: "status", isListening });
   }, [isListening]);
 
-  // Listen for toggle commands from popup
+  // Set up control channel once (stable)
   useEffect(() => {
-    const controlChannel = new BroadcastChannel("subtitle-control");
-    controlChannel.onmessage = (e) => {
+    controlChannelRef.current = new BroadcastChannel("subtitle-control");
+    const channel = controlChannelRef.current;
+
+    channel.onmessage = (e) => {
       if (e.data?.type === "toggle") {
-        if (isListening) {
-          stop();
+        if (isListeningRef.current) {
+          stopRef.current();
         } else {
-          start().catch(() => {});
+          startRef.current().catch(() => {});
         }
       }
     };
-    return () => controlChannel.close();
-  }, [isListening, start, stop]);
+
+    return () => {
+      channel.close();
+      controlChannelRef.current = null;
+    };
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      interimChannelRef.current?.close();
+    };
+  }, []);
 
   const handleClear = () => {
     if (items.length > 0 && window.confirm("确定要清空全部字幕吗？")) {
@@ -100,7 +121,11 @@ function AppInner() {
     if (popup) {
       popupRef.current = popup;
       interimChannelRef.current = new BroadcastChannel("subtitle-interim");
-      statusChannelRef.current = new BroadcastChannel("subtitle-control");
+
+      // Send current status immediately
+      if (controlChannelRef.current) {
+        controlChannelRef.current.postMessage({ type: "status", isListening });
+      }
     }
   };
 
