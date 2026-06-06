@@ -2,6 +2,7 @@
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import type { ConnectionStatus } from "./hooks/useSpeechRecognition";
 import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext";
+import { SubtitleList } from "./components/SubtitleList";
 import { FloatingWindow } from "./components/FloatingWindow";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
@@ -46,7 +47,6 @@ function AppInner() {
 
   const [statusMsg, setStatusMsg] = useState("");
 
-  // Broadcast interimText to popup
   useEffect(() => {
     if (!broadcastRef.current) return;
     broadcastRef.current.postMessage({ type: "interim", text: interimText });
@@ -92,8 +92,6 @@ function AppInner() {
 
     if (popup) {
       popupRef.current = popup;
-
-      // Create broadcast channel for interim text
       broadcastRef.current = new BroadcastChannel("subtitle-interim");
     }
   };
@@ -168,8 +166,10 @@ function AppInner() {
         </div>
       </footer>
 
-      {/* Floating subtitle window (in-page overlay) */}
-      <FloatingWindow interimText={interimText} />
+      {/* Floating window with subtitles */}
+      <FloatingWindow interimText={interimText}>
+        <SubtitleList interimText={interimText} transparent />
+      </FloatingWindow>
     </div>
   );
 }
