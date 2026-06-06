@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 const API_KEY = 'hQaxRjnhJ6wean4FCAqdSP84';
 const SECRET_KEY = 'vOFTi1baGB3cmDpynsXfK4d9HdLFgy08';
-const TRANSLATE_APP_ID = 'Q5Hd_d8hc0g70sfpjfm4rr170';
+// Translation API now uses OAuth token (same as ASR)
 let cachedToken = '';
 let tokenExpiry = 0;
 
@@ -45,16 +45,21 @@ function baiduApiPlugin() {
           await new Promise(r => req.on('end', r));
           const { q, from, to } = JSON.parse(body);
 
-          const salt = String(Math.floor(Math.random() * 10000000000));
-          const sign = crypto.createHash('md5').update(TRANSLATE_APP_ID + q + salt + SECRET_KEY).digest('hex');
+          const token = await getToken();
+          const url = 'https://aip.baidubce.com/rpc/2.0/mt/texttrans/v1?access_token=' + token;
 
-          const params = new URLSearchParams({
-            q, from: from || 'en', to: to || 'zh',
-            appid: TRANSLATE_APP_ID, salt, sign,
+          const fetchRes = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from: from || 'en', to: to || 'zh', q }),
           });
-
-          const fetchRes = await fetch('https://fanyi-api.baidu.com/api/trans/vip/translate?' + params.toString());
           const data = await fetchRes.json() as any;
+
+          // Convert MT API response to same format as fanyi API
+          if (data.result?.trans_result) {
+            data.trans_result = data.result.trans_result;
+          }
+
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(data));
         } catch (err: any) {
@@ -104,4 +109,7 @@ function baiduApiPlugin() {
 }
 
 export default defineConfig({ plugins: [react(), tailwindcss(), baiduApiPlugin()] })
+
+
+
 

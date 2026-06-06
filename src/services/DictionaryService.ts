@@ -3,20 +3,14 @@
   if (!key) return null;
 
   try {
-    const res = await fetch("/api/baidu-translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q: key, from: "en", to: "zh" }),
-    });
-
+    const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(key) + "&langpair=en|zh";
+    const res = await fetch(url);
     if (!res.ok) return null;
+
     const data = await res.json();
-    if (data.error_code) return null;
-
-    if (data.trans_result && data.trans_result.length > 0) {
-      return data.trans_result.map((t: { dst: string }) => t.dst).join("");
+    if (data.responseStatus === 200 && data.responseData?.translatedText) {
+      return data.responseData.translatedText;
     }
-
     return null;
   } catch {
     return null;
