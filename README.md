@@ -91,6 +91,7 @@ api/
 ```
 
 
+
 ## 📋 开发进度
 
 | PR | 内容 | 状态 |
@@ -106,7 +107,7 @@ api/
 | PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | ✅ codex/pr9-floating-window |
 | PR10 | FloatingWindow — 桌面歌词风格 + 字体颜色选择 | ✅ codex/pr10-lyrics-style |
 | PR11 | 字幕手动编辑 — inline 编辑 + 自动重译 | ✅ codex/pr11-subtitle-edit |
-| PR12 | 字幕导出（TXT / Markdown / JSON） | ⬜ 待开发 |
+| PR12 | 字幕导出（TXT / Markdown / JSON） | ✅ codex/pr12-subtitle-export |
 | PR13 | 设置面板（导出格式、字体颜色等，localStorage 持久化） | ⬜ 待开发 |
 | PR14 | 上下文修正（根据后文修正前文翻译） | ⬜ 待开发 |
 | PR15 | 集成联调与 UI 打磨（全链路 + 边界 + 暗色模式） | ⬜ 待开发 |
