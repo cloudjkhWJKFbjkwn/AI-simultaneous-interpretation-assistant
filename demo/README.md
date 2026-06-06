@@ -39,7 +39,7 @@ VITE_BAIDU_APP_ID=xxx    # 与 BAIDU_APP_ID 相同
 ### 已知问题
 
 - ASR 函数中 Netlify 对二进制音频的编码方式与本地 Vite 代理不同，可能导致识别报错
-- 同时使用Netlify的线上网站，在1识别速度上和本地有明显差距。
+- 同时使用Netlify的线上网站，在识别速度上和本地有明显差距。
 
 ---
 
