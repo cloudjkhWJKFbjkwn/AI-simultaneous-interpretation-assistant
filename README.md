@@ -79,7 +79,7 @@ src/
 | PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ codex/pr5-use-drag |
 | PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ codex/pr6-use-autoscroll |
 | PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ codex/pr7-subtitle-components |
-| PR8 | WordPopover — 单词释义弹窗 | ⬜ 待开发 |
+| PR8 | WordPopover — 单词释义弹窗 | ✅ codex/pr7-subtitle-components |
 | PR9 | FloatingWindow — 拖拽 + 折叠 | ⬜ 待开发 |
 | PR10 | FloatingWindow — 透明度 + 响应式适配 | ⬜ 待开发 |
 | PR11 | 字幕手动编辑 | ⬜ 待开发 |
