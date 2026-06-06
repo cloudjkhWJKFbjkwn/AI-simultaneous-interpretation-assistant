@@ -1,57 +1,31 @@
-import { useState, useCallback } from 'react';
-import { useSpeechRecognition } from './hooks/useSpeechRecognition';
-import type { ConnectionStatus } from './hooks/useSpeechRecognition';
-import type { SubtitleItem } from './types';
-import { SubtitleProvider, useSubtitleContext } from './context/SubtitleContext';
+﻿import { useState, useCallback } from "react";
+import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
+import type { ConnectionStatus } from "./hooks/useSpeechRecognition";
+import { SubtitleProvider, useSubtitleContext } from "./context/SubtitleContext";
+import { SubtitleList } from "./components/SubtitleList";
 
 function getStatusText(status: ConnectionStatus, isListening: boolean): string {
-  if (status === 'connecting') return '连接中...';
-  if (status === 'connected') return isListening ? '监听中' : '已连接';
-  if (status === 'disconnected') return '已断开';
-  return '待命';
+  if (status === "connecting") return "连接中...";
+  if (status === "connected") return isListening ? "监听中" : "已连接";
+  if (status === "disconnected") return "已断开";
+  return "待命";
 }
 
 function getStatusDotClass(status: ConnectionStatus, isListening: boolean): string {
-  const base = 'w-2 h-2 rounded-full ';
-  if (status === 'connecting') return base + 'bg-yellow-500 animate-pulse';
-  if (status === 'connected' && isListening) return base + 'bg-green-500 animate-pulse';
-  if (status === 'connected') return base + 'bg-green-500';
-  if (status === 'disconnected') return base + 'bg-red-400';
-  return base + 'bg-slate-300';
-}
-
-function SubtitleCard({ item, onToggleMark }: { item: SubtitleItem; onToggleMark: (id: string) => void }) {
-  return (
-    <div
-      className="p-3 bg-white rounded-lg border border-slate-100 shadow-sm cursor-pointer hover:border-yellow-300 transition-colors"
-      onClick={() => onToggleMark(item.id)}
-    >
-      <div className="flex items-start gap-2">
-        {item.marked && <span className="text-yellow-400 text-sm mt-0.5 shrink-0">★</span>}
-        <div className="min-w-0 flex-1">
-          <p className="text-slate-800 text-sm leading-relaxed break-words">{item.sourceText}</p>
-          {item.translatedText ? (
-            <p className="text-blue-600 text-sm leading-relaxed mt-1 pt-1 border-t border-slate-100 break-words">
-              {item.translatedText}
-              {item.version > 0 && (
-                <span className="text-xs text-slate-300 ml-1">v{item.version + 1}</span>
-              )}
-            </p>
-          ) : (
-            <p className="text-slate-300 text-xs mt-1 animate-pulse">翻译中...</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const base = "w-2 h-2 rounded-full ";
+  if (status === "connecting") return base + "bg-yellow-500 animate-pulse";
+  if (status === "connected" && isListening) return base + "bg-green-500 animate-pulse";
+  if (status === "connected") return base + "bg-green-500";
+  if (status === "disconnected") return base + "bg-red-400";
+  return base + "bg-slate-300";
 }
 
 function AppInner() {
-  const { items, addSubtitle, correctSubtitle, toggleMark, clearSubtitles } = useSubtitleContext();
+  const { items, addSubtitle, correctSubtitle, clearSubtitles } = useSubtitleContext();
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
-      return addSubtitle(sourceText, '', 'final');
+      return addSubtitle(sourceText, "", "final");
     },
     [addSubtitle]
   );
@@ -68,25 +42,25 @@ function AppInner() {
     onTranslationReady: handleTranslationReady,
   });
 
-  const [statusMsg, setStatusMsg] = useState('');
+  const [statusMsg, setStatusMsg] = useState("");
 
   const handleToggle = async () => {
     if (isListening) {
       stop();
-      setStatusMsg('');
+      setStatusMsg("");
     } else {
-      setStatusMsg('正在启动语音识别...');
+      setStatusMsg("正在启动语音识别...");
       try {
         await start();
-        setStatusMsg('语音识别已启动，请说话');
+        setStatusMsg("语音识别已启动，请说话");
       } catch (e) {
-        setStatusMsg('启动失败: ' + (e as Error).message);
+        setStatusMsg("启动失败: " + (e as Error).message);
       }
     }
   };
 
   const handleClear = () => {
-    if (items.length > 0 && window.confirm('确定要清空全部字幕吗？')) {
+    if (items.length > 0 && window.confirm("确定要清空全部字幕吗？")) {
       clearSubtitles();
     }
   };
@@ -116,15 +90,15 @@ function AppInner() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-slate-50">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {statusMsg && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 text-sm">
-            🔧 {statusMsg}
+          <div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 text-sm">
+            🔔 {statusMsg}
           </div>
         )}
 
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
             ⚠️ {error}
           </div>
         )}
@@ -137,15 +111,7 @@ function AppInner() {
           </div>
         )}
 
-        {items.map(function (item) {
-          return <SubtitleCard key={item.id} item={item} onToggleMark={toggleMark} />;
-        })}
-
-        {interimText && (
-          <div className="p-3 bg-white rounded-lg border border-blue-200 shadow-sm opacity-70">
-            <p className="text-slate-500 text-sm italic">{interimText}</p>
-          </div>
-        )}
+        <SubtitleList interimText={interimText} />
       </main>
 
       <footer className="px-6 py-4 border-t border-slate-200 bg-white">
@@ -153,13 +119,13 @@ function AppInner() {
           <button
             onClick={handleToggle}
             className={
-              'px-8 py-3 rounded-full font-medium transition-all cursor-pointer active:scale-95 ' +
+              "px-8 py-3 rounded-full font-medium transition-all cursor-pointer active:scale-95 " +
               (isListening
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-blue-500 text-white hover:bg-blue-600')
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : "bg-blue-500 text-white hover:bg-blue-600")
             }
           >
-            {isListening ? '停止监听' : '开始监听'}
+            {isListening ? "停止监听" : "开始监听"}
           </button>
         </div>
       </footer>
