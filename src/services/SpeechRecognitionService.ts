@@ -9,7 +9,6 @@ export type StatusCallback = (status: "connecting" | "connected" | "disconnected
 const SILENCE_THRESHOLD = 600;
 const SILENCE_FRAMES = 8;
 const MAX_INTERVAL = 3000;
-const TEXT_IDLE_TIMEOUT = 5000;
 
 export class SpeechRecognitionService {
   private _isActive = false;
@@ -39,7 +38,7 @@ export class SpeechRecognitionService {
 
     this.onStatus?.("connecting");
     const res = await fetch("/api/baidu-token");
-    if (!res.ok) { const d = await res.json().catch(() => ({})); onError("Token failed"); return; }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); onError("Token 获取失败，请检查百度 API 密钥"); return; }
 
     this._isActive = true;
     this.onStatus?.("connected");
@@ -52,16 +51,6 @@ export class SpeechRecognitionService {
 
     if (Date.now() - this.lastSendTime > MAX_INTERVAL && this.audioChunks.length > 0) {
       this.flushAudio();
-    }
-
-    if (
-      this.textBuffer.trim() &&
-      this.lastTextUpdate > 0 &&
-      Date.now() - this.lastTextUpdate > TEXT_IDLE_TIMEOUT
-    ) {
-      const text = this.textBuffer.trim();
-      this.textBuffer = "";
-      this.onResult?.({ type: "final", text, timestamp: Date.now() });
     }
   }
 
@@ -92,14 +81,11 @@ export class SpeechRecognitionService {
     this.textBuffer += (this.textBuffer ? " " : "") + newPunctuatedChunk;
 
     const sentences = this.segmentSentences(this.textBuffer);
-
     const completeCount = sentences.length > 1 ? sentences.length - 1 : 0;
     for (let i = 0; i < completeCount; i++) {
       this.onResult?.({ type: "final", text: sentences[i], timestamp: Date.now() });
     }
-
     this.textBuffer = sentences.length > 0 ? sentences[sentences.length - 1] : "";
-
     if (this.textBuffer) {
       this.onResult?.({ type: "interim", text: this.textBuffer, timestamp: Date.now() });
     }
@@ -129,8 +115,12 @@ export class SpeechRecognitionService {
           const punctuated = PunctuationService.restore(raw);
           this.processText(punctuated);
         }
+      } else if (d.err_no !== 0) {
+        this.onError?.("识别错误: " + (d.err_msg || "未知"));
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      this.onError?.("网络请求失败，请检查网络连接");
+    }
   }
 
   sendAudio(pcmData: Int16Array): void {

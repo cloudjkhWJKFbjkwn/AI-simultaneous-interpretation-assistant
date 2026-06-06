@@ -25,7 +25,7 @@ function getStatusDotClass(status: ConnectionStatus, isListening: boolean): stri
 }
 
 function AppInner() {
-  const { items, addSubtitle, correctSubtitle, autoCorrectSubtitle, clearSubtitles } = useSubtitleContext();
+  const { items, addSubtitle, correctSubtitle, autoCorrectSubtitle, clearSubtitles, lastEvents } = useSubtitleContext();
   const popupRef = useRef<Window | null>(null);
   const interimChannelRef = useRef<BroadcastChannel | null>(null);
   const controlChannelRef = useRef<BroadcastChannel | null>(null);
@@ -36,14 +36,41 @@ function AppInner() {
   const itemsRef = useRef(items);
   const correctionRef = useRef(new CorrectionService());
   const asrPostRef = useRef(new AsrPostProcessor(new DeepSeekService()));
+  const retryCountRef = useRef(0);
+
+  // Toast 消息系统
+  const [toast, setToast] = useState<{ type: "error" | "warn" | "info"; msg: string } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (type: "error" | "warn" | "info", msg: string) => {
+    setToast({ type, msg });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (type !== "error") {
+      toastTimerRef.current = setTimeout(() => setToast(null), 5000);
+    }
+  };
 
   useEffect(() => { itemsRef.current = items; }, [items]);
+
+  // 溢出检测
+  useEffect(() => {
+    const overflow = lastEvents.find(e => e.type === "overflow");
+    if (overflow) showToast("warn", "字幕已达上限，旧条目已自动清理");
+  }, [lastEvents]);
+
+  // 空闲检测回调
+  const handleIdle = useCallback(() => {
+    showToast("info", "已监听 3 分钟无语音输入，请继续说话");
+  }, []);
+
+  // 错误上限回调
+  const handleErrorLimit = useCallback(() => {
+    // 自动停止已在 useSpeechRecognition 中处理
+  }, []);
 
   const handleFinalSentence = useCallback(
     (sourceText: string, timestamp: number): string => {
       return addSubtitle(sourceText, "", "final");
-    },
-    [addSubtitle]
+    }, [addSubtitle]
   );
 
   const handleTranslationReady = useCallback(
@@ -62,31 +89,28 @@ function AppInner() {
 
       for (const prev of lookback) {
         if (!correction.markProcessing(prev.id)) continue;
-
         const context = correction.buildCorrectionContext(prev.sourceText, currentItem.sourceText);
-
         import("./services/TranslationService").then(({ createTranslationService, getDefaultStrategy }) => {
           const strategy = getDefaultStrategy();
           return createTranslationService({
-            strategy,
-            baiduAppId: strategy === "baidu" ? "20260605002626604" : undefined,
+            strategy, baiduAppId: strategy === "baidu" ? "20260605002626604" : undefined,
           });
-        }).then((ts) => {
-          return ts.translate(context);
-        }).then((newTranslation) => {
+        }).then((ts) => ts.translate(context)
+        ).then((newTranslation) => {
           autoCorrectSubtitle(prev.id, newTranslation);
         }).catch(() => {}).finally(() => {
           correction.clearProcessing(prev.id);
         });
       }
-    },
-    [correctSubtitle, autoCorrectSubtitle]
+    }, [correctSubtitle, autoCorrectSubtitle]
   );
 
   const { interimText, isListening, error, connectionStatus, start, stop } = useSpeechRecognition({
     onFinalSentence: handleFinalSentence,
     onTranslationReady: handleTranslationReady,
     asrPostProcessor: asrPostRef.current,
+    onIdle: handleIdle,
+    onErrorLimit: handleErrorLimit,
   });
 
   const [statusMsg, setStatusMsg] = useState("");
@@ -94,6 +118,12 @@ function AppInner() {
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { startRef.current = start; }, [start]);
   useEffect(() => { stopRef.current = stop; }, [stop]);
+
+  // 错误 toast
+  useEffect(() => {
+    if (error) showToast("error", error);
+    else if (!isListening && !error) setToast(null);
+  }, [error, isListening]);
 
   useEffect(() => {
     if (!isListening) {
@@ -115,28 +145,16 @@ function AppInner() {
   useEffect(() => {
     controlChannelRef.current = new BroadcastChannel("subtitle-control");
     const channel = controlChannelRef.current;
-
     channel.onmessage = (e) => {
       if (e.data?.type === "toggle") {
-        if (isListeningRef.current) {
-          stopRef.current();
-        } else {
-          startRef.current().catch(() => {});
-        }
+        if (isListeningRef.current) stopRef.current();
+        else startRef.current().catch(() => {});
       }
     };
-
-    return () => {
-      channel.close();
-      controlChannelRef.current = null;
-    };
+    return () => { channel.close(); controlChannelRef.current = null; };
   }, []);
 
-  useEffect(() => {
-    return () => {
-      interimChannelRef.current?.close();
-    };
-  }, []);
+  useEffect(() => { return () => { interimChannelRef.current?.close(); }; }, []);
 
   const handleClear = () => {
     if (items.length > 0 && window.confirm("确定要清空全部字幕吗？")) {
@@ -149,13 +167,19 @@ function AppInner() {
   const handleExport = (format: ExportFormat) => {
     const finalItems = items.filter((item) => item.status === "final");
     if (finalItems.length === 0) return;
-
     switch (format) {
       case "txt": exportAsTxt(finalItems); break;
       case "md": exportAsMarkdown(finalItems); break;
       case "json": exportAsJson(finalItems); break;
     }
     setShowExportMenu(false);
+  };
+
+  const handleRetry = async () => {
+    setToast(null);
+    retryCountRef.current++;
+    try { await start(); }
+    catch (e) { /* error handled by hook */ }
   };
 
   const openPopup = () => {
@@ -172,15 +196,13 @@ function AppInner() {
         controlChannelRef.current.postMessage({ type: "status", isListening: isListeningRef.current });
       }
       popup.addEventListener("beforeunload", () => {
-        interimChannelRef.current?.close();
-        interimChannelRef.current = null;
-        popupRef.current = null;
+        interimChannelRef.current?.close(); interimChannelRef.current = null; popupRef.current = null;
       });
     }
   };
 
   const handleToggle = async () => {
-    if (isListening) { stop(); setStatusMsg(""); }
+    if (isListening) { stop(); setStatusMsg(""); retryCountRef.current = 0; }
     else {
       setStatusMsg("正在启动语音识别...");
       try { await start(); setStatusMsg("语音识别已启动，请说话"); }
@@ -219,18 +241,39 @@ function AppInner() {
           <span className="text-sm text-slate-400">{statusText}</span>
         </div>
       </header>
+
+      {/* Toast 提示 */}
+      {toast && (
+        <div className={"mx-6 mt-3 p-3 rounded-lg text-sm flex items-center justify-between " +
+          (toast.type === "error" ? "bg-red-50 border border-red-200 text-red-700" :
+           toast.type === "warn" ? "bg-amber-50 border border-amber-200 text-amber-700" :
+           "bg-blue-50 border border-blue-200 text-blue-700")}>
+          <span>{toast.type === "error" ? "⚠️" : toast.type === "warn" ? "💡" : "🔔"} {toast.msg}</span>
+          <div className="flex items-center gap-2">
+            {toast.type === "error" && (
+              <button onClick={handleRetry} className="text-xs underline cursor-pointer hover:opacity-80">重试</button>
+            )}
+            <button onClick={() => setToast(null)} className="text-lg leading-none cursor-pointer opacity-50 hover:opacity-100">×</button>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 flex flex-col overflow-hidden">
-        {statusMsg && (<div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 text-sm">🔔 {statusMsg}</div>)}
-        {error && (<div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">⚠️ {error}</div>)}
-        {!isListening && items.length === 0 && !error && !statusMsg && (
+        {statusMsg && (
+          <div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 text-sm">🔔 {statusMsg}</div>
+        )}
+
+        {!isListening && items.length === 0 && !statusMsg && (
           <div className="flex flex-col items-center justify-center h-full text-slate-300">
             <span className="text-5xl mb-4">🎤</span>
             <p className="text-lg">点击下方按钮开始实时翻译</p>
             <p className="text-sm mt-1">说出英文，实时显示翻译结果</p>
           </div>
         )}
+
         <SubtitleList interimText={interimText} />
       </main>
+
       <footer className="px-6 py-4 border-t border-slate-200 bg-white">
         <div className="flex items-center justify-center gap-4">
           <button onClick={handleToggle}

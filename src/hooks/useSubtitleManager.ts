@@ -5,10 +5,10 @@ function generateId(): string {
   return "sub_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
 }
 
-const MAX_SUBTITLES = 500;
+const MAX_SUBTITLES = 200;
 
 export interface SubtitleChangeEvent {
-  type: "added" | "corrected" | "autoCorrected" | "marked" | "cleared" | "statusUpdated";
+  type: "added" | "corrected" | "autoCorrected" | "marked" | "cleared" | "statusUpdated" | "overflow";
   id?: string;
   version?: number;
 }
@@ -21,13 +21,17 @@ interface SubtitleState {
 function subtitleReducer(state: SubtitleState, action: SubtitleAction): SubtitleState {
   switch (action.type) {
     case "add": {
+      const wasAtLimit = state.items.length >= MAX_SUBTITLES;
       let items = [...state.items, action.item];
       if (items.length > MAX_SUBTITLES) {
         items = items.slice(items.length - MAX_SUBTITLES);
       }
       return {
         items,
-        lastEvents: [{ type: "added", id: action.item.id }],
+        lastEvents: [
+          { type: "added", id: action.item.id },
+          ...(wasAtLimit ? [{ type: "overflow" as const }] : []),
+        ],
       };
     }
 
@@ -105,11 +109,7 @@ function subtitleReducer(state: SubtitleState, action: SubtitleAction): Subtitle
 export interface SubtitleManager {
   items: SubtitleItem[];
   lastEvents: SubtitleChangeEvent[];
-  addSubtitle: (
-    sourceText: string,
-    translatedText: string,
-    status?: SubtitleStatus
-  ) => string;
+  addSubtitle: (sourceText: string, translatedText: string, status?: SubtitleStatus) => string;
   correctSubtitle: (id: string, newTranslatedText: string) => void;
   autoCorrectSubtitle: (id: string, newTranslatedText: string) => void;
   toggleMark: (id: string) => void;
@@ -119,32 +119,18 @@ export interface SubtitleManager {
 }
 
 export function useSubtitleManager(): SubtitleManager {
-  const [state, dispatch] = useReducer(subtitleReducer, {
-    items: [],
-    lastEvents: [],
-  });
+  const [state, dispatch] = useReducer(subtitleReducer, { items: [], lastEvents: [] });
 
   const addSubtitle = useCallback(
-    (
-      sourceText: string,
-      translatedText: string,
-      status: SubtitleStatus = "final"
-    ): string => {
+    (sourceText: string, translatedText: string, status: SubtitleStatus = "final"): string => {
       const id = generateId();
       const item: SubtitleItem = {
-        id,
-        sourceText,
-        translatedText,
-        timestamp: Date.now(),
-        marked: false,
-        corrected: false,
-        version: 0,
-        status,
+        id, sourceText, translatedText, timestamp: Date.now(),
+        marked: false, corrected: false, version: 0, status,
       };
       dispatch({ type: "add", item });
       return id;
-    },
-    []
+    }, []
   );
 
   const correctSubtitle = useCallback((id: string, newTranslatedText: string) => {
@@ -170,19 +156,13 @@ export function useSubtitleManager(): SubtitleManager {
   const editSubtitle = useCallback(
     (id: string, sourceText?: string, translatedText?: string) => {
       dispatch({ type: "edit", id, sourceText, translatedText });
-    },
-    []
+    }, []
   );
 
   return {
     items: state.items,
     lastEvents: state.lastEvents,
-    addSubtitle,
-    correctSubtitle,
-    autoCorrectSubtitle,
-    toggleMark,
-    updateStatus,
-    clearSubtitles,
-    editSubtitle,
+    addSubtitle, correctSubtitle, autoCorrectSubtitle,
+    toggleMark, updateStatus, clearSubtitles, editSubtitle,
   };
 }

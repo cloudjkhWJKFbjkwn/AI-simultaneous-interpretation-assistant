@@ -11,6 +11,8 @@ interface UseSpeechRecognitionOptions {
   onFinalSentence?: (sourceText: string, timestamp: number) => string | undefined;
   onTranslationReady?: (id: string, translatedText: string) => void;
   asrPostProcessor?: AsrPostProcessor | null;
+  onIdle?: () => void;
+  onErrorLimit?: () => void;
 }
 
 interface UseSpeechRecognitionReturn {
@@ -28,6 +30,8 @@ const BUFFER_SIZE = 4096;
 const SAMPLE_RATE = 16000;
 const MERGE_WINDOW_MS = 800;
 const MAX_MERGE_ROUNDS = 4;
+const MAX_CONSECUTIVE_ERRORS = 3;
+const IDLE_TIMEOUT_MS = 180000;  // 3 分钟
 
 export function useSpeechRecognition(
   options: UseSpeechRecognitionOptions = {}
@@ -68,12 +72,29 @@ export function useSpeechRecognition(
     let previousIncomplete = "";
     let mergeRounds = 0;
 
+    // 错误计数
+    let consecutiveErrors = 0;
+
+    // 空闲检测
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
+    const resetIdleTimer = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        optionsRef.current.onIdle?.();
+      }, IDLE_TIMEOUT_MS);
+    };
+    resetIdleTimer();
+
     const emitSentence = (sourceText: string, timestamp: number) => {
+      resetIdleTimer();
+      consecutiveErrors = 0;  // 成功发射，重置错误计数
       if (optionsRef.current.onFinalSentence) {
         const id = optionsRef.current.onFinalSentence(sourceText, timestamp);
         if (id && translateRef.current) {
           translateRef.current.translate(sourceText).then(translated => {
             optionsRef.current.onTranslationReady?.(id, translated);
+          }).catch(err => {
+            console.warn('[Hook] translate failed:', err);
           });
         }
       } else {
@@ -93,7 +114,7 @@ export function useSpeechRecognition(
             setCompletedSentences(prev =>
               prev.map(s => s.id === item.id ? { ...s, translatedText: translated } : s)
             );
-          });
+          }).catch(() => {});
         }
       }
     };
@@ -106,27 +127,26 @@ export function useSpeechRecognition(
         ? previousIncomplete + " " + fragments.join(" ")
         : fragments.join(" ");
 
-      if (!combined.trim()) return;
+      const trimmed = combined.trim();
+      if (!trimmed) return;
 
       const timestamp = lastMergeTimestamp || Date.now();
 
-      let sourceText = combined;
+      let sourceText = trimmed;
       let incomplete = false;
       const processor = optionsRef.current.asrPostProcessor;
       if (processor) {
         try {
-          const result = await processor.correct(combined);
-          sourceText = result.text || combined;
+          const result = await processor.correct(trimmed);
+          sourceText = result.text || trimmed;
           incomplete = result.incomplete;
         } catch { /* fallback */ }
       }
 
       if (incomplete && mergeRounds < MAX_MERGE_ROUNDS) {
-        // 句子不完整，保留等待下一批合并
         previousIncomplete = sourceText;
         mergeRounds++;
       } else {
-        // 句子完整或达到最大轮数，发射
         if (sourceText.trim()) {
           emitSentence(sourceText.trim(), timestamp);
         }
@@ -147,6 +167,9 @@ export function useSpeechRecognition(
             setInterimText('');
             lastMergeTimestamp = result.timestamp;
 
+            // 过滤空文本
+            if (!result.text.trim()) return;
+
             mergeBuffer.push(result.text);
 
             if (mergeTimer) clearTimeout(mergeTimer);
@@ -156,11 +179,29 @@ export function useSpeechRecognition(
             }, MERGE_WINDOW_MS);
           }
         },
-        (err: string) => { console.error('[Hook] err:', err); setError(err); },
+        (err: string) => {
+          console.error('[Hook] err:', err);
+          consecutiveErrors++;
+          if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+            setError('连续识别失败，已自动停止。请检查网络后重试');
+            optionsRef.current.onErrorLimit?.();
+            // 自动停止
+            captureRef.current?.stopRecording();
+            asrRef.current?.stop();
+            captureRef.current?.stop();
+            captureRef.current = null;
+            asrRef.current = null;
+            setIsListening(false);
+            setConnectionStatus('disconnected');
+          } else {
+            setError(err + ' (' + consecutiveErrors + '/' + MAX_CONSECUTIVE_ERRORS + ')');
+          }
+        },
         () => {
           if (mergeTimer) clearTimeout(mergeTimer);
           mergeTimer = null;
-          // 停止时强制发射（忽略 incomplete，直接输出）
+          if (idleTimer) clearTimeout(idleTimer);
+          idleTimer = null;
           const combined = previousIncomplete
             ? previousIncomplete + " " + mergeBuffer.join(" ")
             : mergeBuffer.join(" ");
