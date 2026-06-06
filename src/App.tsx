@@ -85,7 +85,7 @@ function AppInner() {
         import("./services/TranslationService").then(({ createTranslationService, getDefaultStrategy }) => {
           const strategy = getDefaultStrategy();
           return createTranslationService({
-            strategy, baiduAppId: strategy === "baidu" ? "20260605002626604" : undefined,
+            strategy, baiduAppId: strategy === "baidu" ? (import.meta as any).env?.VITE_BAIDU_APP_ID || "" : undefined,
           });
         }).then((ts) => ts.translate(context)).then((nt) => {
           autoCorrectSubtitle(prev.id, nt);

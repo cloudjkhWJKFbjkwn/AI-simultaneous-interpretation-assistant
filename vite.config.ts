@@ -30,8 +30,8 @@ function loadEnvFromFile(): Record<string, string> {
 
 const LOCAL_ENV = loadEnvFromFile();
 
-const API_KEY = "hQaxRjnhJ6wean4FCAqdSP84";
-const SECRET_KEY = "vOFTi1baGB3cmDpynsXfK4d9HdLFgy08";
+const API_KEY = process.env.BAIDU_API_KEY || LOCAL_ENV.BAIDU_API_KEY || "";
+const SECRET_KEY = process.env.BAIDU_SECRET_KEY || LOCAL_ENV.BAIDU_SECRET_KEY || "";
 let cachedToken = "";
 let tokenExpiry = 0;
 

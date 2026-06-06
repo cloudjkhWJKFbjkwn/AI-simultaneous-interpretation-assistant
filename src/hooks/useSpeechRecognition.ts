@@ -52,7 +52,7 @@ export function useSpeechRecognition(
     const strategy = getDefaultStrategy();
     createTranslationService({
       strategy,
-      baiduAppId: strategy === 'baidu' ? '20260605002626604' : undefined,
+      baiduAppId: strategy === 'baidu' ? (import.meta as any).env?.VITE_BAIDU_APP_ID || "" : undefined,
     }).then(svc => {
       translateRef.current = svc;
     });
