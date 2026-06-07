@@ -139,7 +139,6 @@ api/
 ### PR5 — useDrag Hook
 **内容**：将鼠标拖拽逻辑从组件中抽离为独立 Hook（useDrag），提供 DragPosition、UseDragOptions 等类型定义。
 **目的**：提升拖拽逻辑的可复用性和可测试性。
-> ⚠️ 目前未被任何组件引用，拖拽功能实际在组件内内联实现
 > ✅ pr5-use-drag
 
 ### PR6 — useAutoScroll Hook
@@ -156,6 +155,7 @@ api/
 **内容**：点击英文单词弹出在线词典释义弹窗。
 **目的**：帮助用户在听讲过程中即时理解生僻或专业词汇，无需跳出当前界面。
 > ✅ pr8-word-popover
+
 ### PR9 — FloatingWindow 独立字幕窗
 **内容**：将字幕抽离为独立悬浮窗（popup.tsx），支持拖拽和折叠。
 **目的**：适合全屏演讲、屏幕共享等场景，字幕不遮挡主内容区域。
