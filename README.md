@@ -45,9 +45,10 @@ npm run dev
 🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
 
 
-### 🌐 线上部署（Vercel）
+### 🌐 线上部署
 
-详见 [demo/README.md](demo/README.md)。
+🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
+
 
 ### 🔑 注册 API
 
