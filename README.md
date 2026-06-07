@@ -41,8 +41,9 @@ VITE_TRANSLATION_STRATEGY=baidu
 npm run dev
 # 打开 http://localhost:5173
 
-🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
 ```
+🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
+
 
 ### 🌐 线上部署（Vercel）
 
