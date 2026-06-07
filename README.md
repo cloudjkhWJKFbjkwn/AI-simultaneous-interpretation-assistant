@@ -94,9 +94,9 @@ api/
 | PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ pr5-use-drag |
 | PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ pr6-use-autoscroll |
 | PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ pr7-subtitle-components |
-| PR8 | WordPopover — 单词释义弹窗 | ✅ pr7-subtitle-components |
-| PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | ✅ pr9-floating-window |
-| PR10 | FloatingWindow — 桌面字幕风格 + 字体颜色选择 | ✅ pr10-lyrics-style |
+| PR8 | WordPopover — 单词释义弹窗 | ✅ pr8-word-popover |
+| PR9 | FloatingWindow — 拖拽 + 折叠 | ⬜ 待开发 |
+| PR10 | FloatingWindow — 透明度 + 响应式适配 | ⬜ 待开发 |
 | PR11 | 字幕手动编辑 | ⬜ 待开发 |
 | PR12 | TTS 语音合成 | ⬜ 待开发 |
 | PR13 | 字幕导出 | ⬜ 待开发 |
