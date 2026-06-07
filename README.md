@@ -1,5 +1,7 @@
 ﻿# 🎙️ AI 同声传译助手 (Web Demo)
 
+🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
+
 > 浏览器端实时英文语音识别 + 智能翻译工具，适用于英文演讲、技术分享和在线课程。
 
 ## 🏗️ 架构
@@ -156,3 +158,10 @@ A: 完全免费。Vercel Hobby 套餐无限站点 + 100GB 流量。
 | PR16 | 边界处理 — 连续错误自动停止、空文本过滤、空闲提醒、弹出窗口错误提示 | ✅ pr16-edge-cases |
 | PR17 | UI 打磨 — 暖灰配色 + 暗色模式 + 全宽布局 + 响应式 | ✅ pr17-ui-polish |
 | PR18 | Vercel 部署 — Serverless API 代理 + 文档更新 | ✅ pr18-deploy |
+
+## 🗺️ 未来改进方向
+
+- 🖥️ **系统级悬浮窗**：将字幕窗从独立浏览器窗口升级为系统级悬浮窗（Picture-in-Picture / 桌面 overlay），不受窗口切换影响
+- 📚 **专业术语增强**：引入不同领域的专业词典（医学、法律、计算机等）或接入领域微调大模型，提升专业场景翻译准确度
+- 🤖 **多模型自由切换**：接入更多 AI 模型（GPT、Claude、Gemini 等），允许用户根据场景自主选择 ASR / 纠错 / 翻译模型
+- 🎬 **音视频文件翻译**：支持上传音频/视频文件，自动提取语音并生成翻译字幕，同时允许用户自行编辑插入字幕
