@@ -116,26 +116,96 @@ api/
 
 ## 📋 开发进度
 
-| PR | 内容 | 目的 / 说明 | 状态 |
-|----|------|-------------|------|
-| PR1 | 项目脚手架搭建（React 19 + Vite 8 + Tailwind CSS v4） | 选定现代前端技术栈，搭建可快速迭代的工程骨架 | ✅ main |
-| PR2 | 音频捕获与语音识别（百度 ASR REST API + 智能断句） | 核心入口：麦克风实时拾音 → 百度短语音识别 → 文本，为后续翻译链路提供原始输入 | ✅ pr2-speech-recognition |
-| PR3 | 翻译服务接入（Mock 本地词典 + 百度翻译 API + 双语字幕） | 先用本地 Mock 词典打通翻译显示流程，再接入百度翻译 API，实现英中双语对照 | ✅ pr3-translation-service |
-| PR4 | 字幕状态管理（useReducer 状态机 + SubtitleContext + 标记功能） | 用 Reducer 状态机统一管理字幕生命周期，BroadcastChannel 同步主窗口与悬浮窗 | ✅ pr4-subtitle-manager |
-| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | 将拖拽逻辑从组件中抽离为独立 Hook，方便多处复用和单独测试 | ✅ pr5-use-drag |
-| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | 新字幕自动滚到底部，用户手动滚动时暂停，避免打断阅读 | ✅ pr6-use-autoscroll |
-| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | 实现字幕卡片渲染和入场动画，奠定 UI 骨架 | ✅ pr7-subtitle-components |
-| PR8 | WordPopover — 单词释义弹窗 | 点击英文单词弹出在线词典释义，帮助理解专业生词 | ✅ pr7-subtitle-components |
-| PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | 将字幕独立为悬浮窗，适合全屏演讲等场景，不遮挡主内容 | ✅ pr9-floating-window |
-| PR10 | FloatingWindow — 桌面字幕风格 + 字体颜色选择 | 优化悬浮窗视觉为桌面字幕风格，支持自定义字体颜色 | ✅ pr10-lyrics-style |
-| PR11 | 字幕手动编辑 — inline 编辑 + 自动重译 | 允许在线修改识别原文或翻译译文，编辑后自动触发重译 | ✅ pr11-subtitle-edit |
-| PR12 | 字幕导出（TXT / Markdown / JSON） | 将整场会议字幕导出为多种格式，方便会后整理、分享和存档 | ✅ pr12-subtitle-export |
-| PR13 | 上下文修正 — 转折词检测 + 根据后文自动修正前文翻译 | 检测转折词（but/however/actually），利用后文语境回修前文翻译，提升整体连贯性 | ✅ pr13-context-correction |
-| PR14 | ASR 后处理 — DeepSeek LLM 纠错 + 碎片防抖合并 + 百度翻译代理 | 用 DeepSeek 纠正同音词/语法/标点，800ms 防抖合并碎片减少 API 调用 | ✅ pr14-asr-postprocess |
-| PR15 | 语义断句 — LLM 判断句子完整性，不完整自动合并 | 用 LLM 判断句子是否完整，不完整则与后续碎片合并，避免产出断句翻译 | ✅ pr15-semantic-segmentation |
-| PR16 | 边界处理 — 连续错误自动停止、空文本过滤、空闲提醒、弹出窗口错误提示 | 处理连续识别失败、空闲无输入、字幕上限等异常场景，提升系统鲁棒性 | ✅ pr16-edge-cases |
-| PR17 | UI 打磨 — 暖灰配色 + 暗色模式 + 全宽布局 + 响应式 | 统一暖灰配色与暗色模式，全宽响应式布局适配不同屏幕 | ✅ pr17-ui-polish |
-| PR18 | Vercel 部署 — Serverless API 代理 + 文档更新 | 通过 Vercel Serverless 代理百度/DeepSeek API，解决浏览器跨域，实现一键部署 | ✅ pr18-deploy |
+### PR1 — 项目脚手架搭建
+**内容**：React 19 + Vite 8 + Tailwind CSS v4 基础工程搭建。
+**目的**：选定现代前端技术栈，搭建可快速迭代的工程骨架，作为整个项目的起点。
+> ✅ 已合入 main
+
+### PR2 — 音频捕获与语音识别
+**内容**：麦克风 PCM 16kHz 采集 + 百度短语音识别 REST API + 音量检测智能断句。
+**目的**：核心入口链路，将实时语音转为文本，为后续翻译链路提供原始输入。
+> ✅ pr2-speech-recognition
+
+### PR3 — 翻译服务接入
+**内容**：Mock 本地词典（300+ 词汇）先行打通翻译显示流程，随后接入百度翻译 API，实现英中双语字幕对照。
+**目的**：先以低成本 Mock 快速验证 UI 和交互逻辑，再接入正式翻译服务。
+> ✅ pr3-translation-service
+
+### PR4 — 字幕状态管理
+**内容**：useReducer 状态机构建字幕生命周期管理，SubtitleContext 全局共享，BroadcastChannel 实现主窗口与悬浮窗同步。
+**目的**：将字幕的识别→翻译→修正→编辑→导出全流程纳入统一状态机，避免状态散落各处。
+> ✅ pr4-subtitle-manager
+
+### PR5 — useDrag Hook
+**内容**：将鼠标拖拽逻辑从组件中抽离为独立 Hook（useDrag），提供 DragPosition、UseDragOptions 等类型定义。
+**目的**：提升拖拽逻辑的可复用性和可测试性。
+> ⚠️ 目前未被任何组件引用，拖拽功能实际在组件内内联实现
+> ✅ pr5-use-drag
+
+### PR6 — useAutoScroll Hook
+**内容**：智能滚动逻辑提取为独立 Hook，新字幕出现时自动滚到底部，用户手动滚动时暂停。
+**目的**：避免自动滚动打断用户正在阅读的内容，兼顾实时性和阅读体验。
+> ✅ pr6-use-autoscroll
+
+### PR7 — SubtitleItem + SubtitleList 基础渲染
+**内容**：实现字幕卡片（SubtitleItem）和字幕列表（SubtitleList）组件，包含入场动画。
+**目的**：奠定 UI 渲染骨架，建立字幕显示的基础组件体系。
+> ✅ pr7-subtitle-components
+
+### PR8 — WordPopover 单词释义弹窗
+**内容**：点击英文单词弹出在线词典释义弹窗。
+**目的**：帮助用户在听讲过程中即时理解生僻或专业词汇，无需跳出当前界面。
+> ✅ pr7-subtitle-components
+
+### PR9 — FloatingWindow 独立字幕窗
+**内容**：将字幕抽离为独立悬浮窗（popup.tsx），支持拖拽和折叠。
+**目的**：适合全屏演讲、屏幕共享等场景，字幕不遮挡主内容区域。
+> ✅ pr9-floating-window
+
+### PR10 — FloatingWindow 桌面字幕风格
+**内容**：优化悬浮窗视觉为桌面字幕风格，增加字体颜色自定义选项。
+**目的**：提升悬浮窗的视觉体验和个性化程度，使其更像专业桌面字幕工具。
+> ✅ pr10-lyrics-style
+
+### PR11 — 字幕手动编辑
+**内容**：支持 inline 在线编辑识别原文或翻译译文，编辑后自动触发重译。
+**目的**：当识别或翻译有误时，用户可即时修正并立即看到更新后的翻译。
+> ✅ pr11-subtitle-edit
+
+### PR12 — 字幕导出
+**内容**：支持将整场会议字幕导出为 TXT / Markdown / JSON 三种格式。
+**目的**：方便会后整理、分享笔记、存档回顾或将字幕用于其他用途。
+> ✅ pr12-subtitle-export
+
+### PR13 — 上下文修正
+**内容**：检测转折词（but / however / actually 等），根据后续语境自动回修前文翻译。
+**目的**：解决演讲中常见的"先立后破"句式导致前文翻译不准确的问题，提升整体连贯性。
+> ✅ pr13-context-correction
+
+### PR14 — ASR 后处理（LLM 纠错）
+**内容**：引入 DeepSeek LLM 对 ASR 识别结果进行后处理——纠错（同音词、语法、标点）+ 碎片防抖合并（800ms）+ 百度翻译代理。
+**目的**：语音识别难免产生碎片和错误，LLM 后处理可将碎片重建为完整、准确的句子，同时减少 API 调用次数。
+> ✅ pr14-asr-postprocess
+
+### PR15 — 语义断句
+**内容**：利用 LLM 判断当前识别文本是否为完整句子，不完整则自动与后续碎片合并。
+**目的**：避免将半个句子（如 "I think that..."）单独送去翻译，产生语义断裂的译文。
+> ✅ pr15-semantic-segmentation
+
+### PR16 — 边界处理
+**内容**：处理连续识别错误自动停止、空文本过滤、空闲无输入提醒、弹出窗口错误提示、字幕上限 200 条等异常场景。
+**目的**：提升系统鲁棒性，避免边缘情况下的崩溃、静默失败或资源耗尽。
+> ✅ pr16-edge-cases
+
+### PR17 — UI 打磨
+**内容**：统一暖灰配色、暗色模式、全宽响应式布局。
+**目的**：提升整体视觉体验，适配不同屏幕尺寸和用户偏好。
+> ✅ pr17-ui-polish
+
+### PR18 — Vercel 部署
+**内容**：通过 Vercel Serverless 代理百度 ASR / 翻译 / DeepSeek API，解决浏览器跨域问题，实现一键部署上线。
+**目的**：让项目可以低成本上线，无需自建后端服务器即可提供完整的 API 代理能力。
+> ✅ pr18-deploy
 
 ## 🗺️ 未来改进方向
 
