@@ -46,6 +46,7 @@ VITE_BAIDU_APP_ID=xxx    # 与 BAIDU_APP_ID 相同
 ## 📹 演示视频
 
 > [B站演示视频](https://www.bilibili.com/video/BV1YnEs66EKn
-> B站视频号：BV1YnEs66EKn
+
+ B站视频号：BV1YnEs66EKn
 
 > ⚠️ 视频使用系统自带录屏工具录制，部分画面存在花屏现象，音频偶有不稳定，敬请谅解。
