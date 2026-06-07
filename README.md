@@ -47,26 +47,15 @@ npm run dev
 
 ### 🌐 线上部署（Vercel）
 
-```bash
-# 一键部署到 Vercel（免费）
-npx vercel --prod
-
-# 在 Vercel Dashboard → Settings → Environment Variables 配置：
-#   BAIDU_API_KEY, BAIDU_SECRET_KEY
-#   BAIDU_APP_ID, BAIDU_TRANSLATE_SECRET_KEY
-#   DEEPSEEK_API_KEY
-```
-
-部署后获得公网地址 https://xxx.vercel.app，随时打开直接演示。
-> ⚠️ **注意**：在线部署（Netlify/Vercel）目前仅支持静态页面浏览，语音识别和翻译需要本地运行（`npm run dev`）。详见 [demo/README.md](demo/README.md)。
+详见 [demo/README.md](demo/README.md)。
 
 ### 🔑 注册 API
 
-| 服务 | 地址 | 免费额度 |
-|------|------|----------|
-| 百度语音识别 | https://console.bce.baidu.com/ai/#/ai/speech/app/list | 5 万次/天 |
-| 百度文本翻译 | https://fanyi-api.baidu.com | 50 万字符/月 |
-| DeepSeek LLM | https://platform.deepseek.com/api_keys | 极低价，¥1/百万 token |
+| 服务 | 地址 | 
+|------|------|
+| 百度语音识别 | https://console.bce.baidu.com/ai/#/ai/speech/app/list | 
+| 百度文本翻译 | https://fanyi-api.baidu.com | 
+| DeepSeek LLM | https://platform.deepseek.com/api_keys |
 
 ## 📋 功能特性
 
@@ -124,17 +113,6 @@ api/
 ├── baidu-token.ts                     # Vercel: 百度 Token 代理
 └── deepseek.ts                        # Vercel: DeepSeek 代理
 ```
-
-## ❓ FAQ
-
-**Q: 为什么不用浏览器内置 SpeechRecognition？**
-A: Chrome 内置 API 在中国大陆不可用（Google 服务被墙）。
-
-**Q: DeepSeek 纠错会不会很慢？**
-A: 单次纠错 ~300-500ms，碎片防抖合并后一轮只调一次，不影响实时体验。
-
-**Q: 部署到 Vercel 要多少钱？**
-A: 完全免费。Vercel Hobby 套餐无限站点 + 100GB 流量。
 
 ## 📋 开发进度
 
