@@ -127,7 +127,7 @@ api/
 | PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | 实现字幕卡片渲染和入场动画，奠定 UI 骨架 | ✅ pr7-subtitle-components |
 | PR8 | WordPopover — 单词释义弹窗 | 点击英文单词弹出在线词典释义，帮助理解专业生词 | ✅ pr7-subtitle-components |
 | PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | 将字幕独立为悬浮窗，适合全屏演讲等场景，不遮挡主内容 | ✅ pr9-floating-window |
-| PR10 | FloatingWindow — 桌面歌词风格 + 字体颜色选择 | 优化悬浮窗视觉为桌面歌词风格，支持自定义字体颜色 | ✅ pr10-lyrics-style |
+| PR10 | FloatingWindow — 桌面字幕风格 + 字体颜色选择 | 优化悬浮窗视觉为桌面字幕风格，支持自定义字体颜色 | ✅ pr10-lyrics-style |
 | PR11 | 字幕手动编辑 — inline 编辑 + 自动重译 | 允许在线修改识别原文或翻译译文，编辑后自动触发重译 | ✅ pr11-subtitle-edit |
 | PR12 | 字幕导出（TXT / Markdown / JSON） | 将整场会议字幕导出为多种格式，方便会后整理、分享和存档 | ✅ pr12-subtitle-export |
 | PR13 | 上下文修正 — 转折词检测 + 根据后文自动修正前文翻译 | 检测转折词（but/however/actually），利用后文语境回修前文翻译，提升整体连贯性 | ✅ pr13-context-correction |
