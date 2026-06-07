@@ -1,73 +1,88 @@
-﻿# 馃帣锔?AI 鍚屽０浼犺瘧鍔╂墜 (Web Demo)
+﻿# 🎙️ AI 同声传译助手 (Web Demo)
 
-> 娴忚鍣ㄧ瀹炴椂鑻辨枃璇煶璇嗗埆 + 涓枃缈昏瘧宸ュ叿锛岄€傜敤浜庤鐪嬭嫳鏂囨紨璁层€佹妧鏈垎浜拰鍦ㄧ嚎璇剧▼銆?
-## 馃彈锔?鏋舵瀯
+> 浏览器端实时英文语音识别 + 中文翻译工具，适用于观看英文演讲、技术分享和在线课程。
+
+## 🏗️ 架构
 
 ```
-楹﹀厠椋?鈫?AudioCapture (PCM 16kHz) 鈫?闊抽噺妫€娴嬫柇鍙?    鈫?SpeechRecognitionService 鈫?/api/baidu-asr (Vite 浠ｇ悊)
-    鈫?鐧惧害鐭闊宠瘑鍒?REST API 鈫?璇箟鏂彞
-    鈫?TranslationService 鈫?SubtitleContext (useReducer 鐘舵€佹満)
-    鈫?瀹炴椂涓嫳鍙岃瀛楀箷灞曠ず锛堝彲鏍囪閲嶇偣銆佽嚜鍔ㄤ慨姝ｏ級
+麦克风 → AudioCapture (PCM 16kHz) → 音量检测断句
+    → SpeechRecognitionService → /api/baidu-asr (Vite 代理)
+    → 百度短语音识别 REST API → 语义断句
+    → TranslationService → SubtitleContext (useReducer 状态机)
+    → 实时中英双语字幕展示（可标记重点、自动修正）
 ```
 
-## 馃殌 蹇€熷紑濮?
+## 🚀 快速开始
+
 ```bash
-# 1. 瀹夎渚濊禆
+# 1. 安装依赖
 npm install
 
-# 2. 閰嶇疆鐧惧害 AI 瀵嗛挜
+# 2. 配置百度 AI 密钥
 cp .env.example .env
-# 缂栬緫 .env 濉叆 BAIDU_API_KEY 鍜?BAIDU_SECRET_KEY
-# 闇€鍦ㄧ櫨搴?AI 鎺у埗鍙板紑閫氾細鐭闊宠瘑鍒€佸疄鏃惰闊宠瘑鍒?
-# 3. 鍚姩寮€鍙戞湇鍔″櫒
+# 编辑 .env 填入 BAIDU_API_KEY 和 BAIDU_SECRET_KEY
+# 需在百度 AI 控制台开通：短语音识别、实时语音识别
+
+# 3. 启动开发服务器
 npm run dev
 
-# 4. 鎵撳紑 http://localhost:5173
+# 4. 打开 http://localhost:5173
 ```
 
-### 缈昏瘧绛栫暐
+### 翻译策略
 
-| 绛栫暐 | 璇存槑 | 閰嶇疆 |
+| 策略 | 说明 | 配置 |
 |------|------|------|
-| `mock` | 鏈湴璇嶅吀缈昏瘧锛堥粯璁わ級锛屾棤闇€ API锛岄浂寤惰繜 | `VITE_TRANSLATION_STRATEGY=mock` |
-| `baidu` | 鐧惧害鏂囨湰缈昏瘧 API锛屾瘡鏈堝厤璐?50 涓囧瓧绗?| `VITE_TRANSLATION_STRATEGY=baidu` + `BAIDU_APP_ID` |
+| `mock` | 本地词典翻译（默认），无需 API，零延迟 | `VITE_TRANSLATION_STRATEGY=mock` |
+| `baidu` | 百度文本翻译 API，每月免费 50 万字符 | `VITE_TRANSLATION_STRATEGY=baidu` + `BAIDU_APP_ID` |
 
-### Vercel 閮ㄧ讲
+### Vercel 部署
 
 ```bash
 npx vercel --prod
 ```
-鐜鍙橀噺: `BAIDU_API_KEY`, `BAIDU_SECRET_KEY`, `VITE_TRANSLATION_STRATEGY`
+环境变量: `BAIDU_API_KEY`, `BAIDU_SECRET_KEY`, `VITE_TRANSLATION_STRATEGY`
 
-## 馃 鏂彞绛栫暐
+## 🧠 断句策略
 
-- **闊抽噺妫€娴?*: 鍋滈】 ~1 绉掕嚜鍔ㄥ垏鍓查煶棰戝彂閫?- **瀹氭椂鍏滃簳**: 鏈€闀?3 绉掑己鍒跺彂閫?- **璇箟鏂彞**: 璇嗗埆缁撴灉鎸夋爣鐐圭鍙?+ 闀垮害鏅鸿兘鍒嗗彞
+- **音量检测**: 停顿 ~1 秒自动切割音频发送
+- **定时兜底**: 最长 3 秒强制发送
+- **语义断句**: 识别结果按标点符号 + 长度智能分句
 
-## 馃幀 瀛楀箷绠＄悊
+## 🎬 字幕管理
 
-- **`useReducer` 鐘舵€佹満**锛氬師瀛愬寲鎿嶄綔 `add` / `correct` / `toggleMark` / `clear`锛屼笉瑙﹀彂鏃犲叧鏉＄洰閲嶆覆鏌?- **`SubtitleContext`**锛氬叏灞€瀛楀箷涓婁笅鏂囷紝璺ㄧ粍浠跺叡浜瓧骞曠姸鎬侊紝閬垮厤 props drilling
-- **鏍囪閲嶇偣**锛氱偣鍑诲瓧骞曞崱鐗囧垏鎹㈡槦鏍?鈽咃紝瀵煎嚭鏃堕珮浜樉绀?- **鐗堟湰杩借釜**锛氫慨姝ｈ瘧鏂囨椂閫掑 `version` 瀛楁锛屾敮鎸佸悗缁笂涓嬫枃淇
-- **涓婇檺淇濇姢**锛氭渶澶氫繚鐣?500 鏉″瓧骞曪紝瓒呭嚭鑷姩娓呯悊鏈€鏃╂潯鐩?
-## 馃敡 鎶€鏈爤
+- **`useReducer` 状态机**：原子化操作 `add` / `correct` / `toggleMark` / `clear`，不触发无关条目重渲染
+- **`SubtitleContext`**：全局字幕上下文，跨组件共享字幕状态，避免 props drilling
+- **标记重点**：点击字幕卡片切换星标 ★，导出时高亮显示
+- **版本追踪**：修正译文时递增 `version` 字段，支持后续上下文修正
+- **上限保护**：最多保留 500 条字幕，超出自动清理最早条目
 
-React 19 + TypeScript + Vite 8 路 Tailwind CSS v4 路 鐧惧害 AI 鐭闊宠瘑鍒?路 鐧惧害鏂囨湰缈昏瘧 API 路 Vercel Serverless
+## 🔧 技术栈
 
-## 馃搧 椤圭洰缁撴瀯
+React 19 + TypeScript + Vite 8 · Tailwind CSS v4 · 百度 AI 短语音识别 · 百度文本翻译 API · Vercel Serverless
+
+## 📁 项目结构
 
 ```
 src/
-鈹溾攢鈹€ App.tsx                            # 涓荤晫闈紙鍙岃瀛楀箷鍗＄墖 + 鏍囪浜や簰锛?鈹溾攢鈹€ context/
-鈹?  鈹斺攢鈹€ SubtitleContext.tsx            # 鍏ㄥ眬瀛楀箷涓婁笅鏂?Provider
-鈹溾攢鈹€ hooks/
-鈹?  鈹溾攢鈹€ useSpeechRecognition.ts        # 璇煶璇嗗埆 + 缈昏瘧鐘舵€佺鐞?鈹?  鈹斺攢鈹€ useSubtitleManager.ts         # useReducer 瀛楀箷鐘舵€佹満
-鈹溾攢鈹€ types.ts                           # 绫诲瀷瀹氫箟
-鈹斺攢鈹€ services/
-    鈹溾攢鈹€ AudioCapture.ts                # 楹﹀厠椋?+ PCM 閲囬泦
-    鈹溾攢鈹€ SpeechRecognitionService.ts    # 鐧惧害 ASR 瀹㈡埛绔?    鈹溾攢鈹€ PunctuationService.ts          # 鏍囩偣琛ュ叏寮曟搸
-    鈹溾攢鈹€ TranslationService.ts          # 缈昏瘧鏈嶅姟宸ュ巶 + LRU 缂撳瓨
-    鈹溾攢鈹€ MockTranslationService.ts      # 鏈湴璇嶅吀缈昏瘧锛?00+ 璇嶆眹锛?    鈹斺攢鈹€ BaiduTranslationService.ts     # 鐧惧害缈昏瘧 API 瀹㈡埛绔?api/
-鈹斺攢鈹€ baidu-token.ts                     # Vercel Token 浠ｇ悊
+├── App.tsx                            # 主界面（双语字幕卡片 + 标记交互）
+├── context/
+│   └── SubtitleContext.tsx            # 全局字幕上下文 Provider
+├── hooks/
+│   ├── useSpeechRecognition.ts        # 语音识别 + 翻译状态管理
+│   └── useSubtitleManager.ts          # useReducer 字幕状态机
+├── types.ts                           # 类型定义
+└── services/
+    ├── AudioCapture.ts                # 麦克风 + PCM 采集
+    ├── SpeechRecognitionService.ts    # 百度 ASR 客户端
+    ├── PunctuationService.ts          # 标点补全引擎
+    ├── TranslationService.ts          # 翻译服务工厂 + LRU 缓存
+    ├── MockTranslationService.ts      # 本地词典翻译（300+ 词汇）
+    └── BaiduTranslationService.ts     # 百度翻译 API 客户端
+api/
+└── baidu-token.ts                     # Vercel Token 代理
 ```
+
 ## 📋 开发进度
 
 | PR | 内容 | 状态 |
@@ -76,11 +91,11 @@ src/
 | PR2 | 音频捕获与语音识别（百度 ASR REST API + 智能断句） | ✅ master |
 | PR3 | 翻译服务接入（Mock 本地词典 + 百度翻译 API + 双语字幕） | ✅ pr3-translation-service |
 | PR4 | 字幕状态管理（useReducer 状态机 + SubtitleContext + 标记功能） | ✅ pr4-subtitle-manager |
-| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ codex/pr5-use-drag |
-| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ codex/pr6-use-autoscroll |
-| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ codex/pr7-subtitle-components |
-| PR8 | WordPopover — 单词释义弹窗 | ✅ codex/pr7-subtitle-components |
-| PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | ✅ codex/pr9-floating-window |
+| PR5 | useDrag Hook — 鼠标拖拽逻辑提取 | ✅ pr5-use-drag |
+| PR6 | useAutoScroll Hook — 智能滚动逻辑提取 | ✅ pr6-use-autoscroll |
+| PR7 | SubtitleItem + SubtitleList — 基础渲染与入场动画 | ✅ pr7-subtitle-components |
+| PR8 | WordPopover — 单词释义弹窗 | ✅ pr7-subtitle-components |
+| PR9 | FloatingWindow — 拖拽 + 折叠 + 独立字幕窗 | ✅ pr9-floating-window |
 | PR10 | FloatingWindow — 透明度 + 响应式适配 | ⬜ 待开发 |
 | PR11 | 字幕手动编辑 | ⬜ 待开发 |
 | PR12 | TTS 语音合成 | ⬜ 待开发 |
