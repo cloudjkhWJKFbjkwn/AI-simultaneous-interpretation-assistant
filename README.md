@@ -1,8 +1,5 @@
 ﻿# 🎙️ AI 同声传译助手 (Web Demo)
 
-🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
-
-> 浏览器端实时英文语音识别 + 智能翻译工具，适用于英文演讲、技术分享和在线课程。
 
 ## 🏗️ 架构
 
@@ -43,6 +40,8 @@ VITE_TRANSLATION_STRATEGY=baidu
 # 3. 启动
 npm run dev
 # 打开 http://localhost:5173
+
+🔗 **在线体验**：[https://ai-simultaneous-interpretation.netlify.app/](https://ai-simultaneous-interpretation.netlify.app/)
 ```
 
 ### 🌐 线上部署（Vercel）
